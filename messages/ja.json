@@ -1,0 +1,243 @@
+{
+  "nav": {
+    "markets": "マーケット",
+    "live": "ライブ",
+    "social": "ソーシャル",
+    "trust": "信頼性",
+    "research": "リサーチ",
+    "deposit": "入金",
+    "search": "何でも取引する"
+  },
+  "categories": {
+    "trending": "注目",
+    "elections": "選挙",
+    "politics": "政治",
+    "sports": "スポーツ",
+    "culture": "カルチャー",
+    "crypto": "暗号資産",
+    "commodities": "商品",
+    "climate": "気候",
+    "economics": "経済",
+    "mentions": "著名人",
+    "finance": "金融",
+    "tech": "テック&科学"
+  },
+  "sports": {
+    "tennis": "テニス",
+    "soccer": "サッカー",
+    "golf": "ゴルフ",
+    "basketball": "バスケ",
+    "hockey": "ホッケー",
+    "baseball": "野球",
+    "cricket": "クリケット",
+    "football": "アメフト",
+    "boxing": "ボクシング",
+    "racing": "レース",
+    "mma": "MMA",
+    "rugby": "ラグビー",
+    "afl": "AFL",
+    "lacrosse": "ラクロス",
+    "other": "その他"
+  },
+  "market": {
+    "live": "LIVE",
+    "upcoming": "開催予定",
+    "closed": "終了",
+    "volume": "取引量",
+    "markets": "マーケット",
+    "yes": "Yes",
+    "no": "No",
+    "buy": "買い",
+    "sell": "売り",
+    "chance": "確率",
+    "change": "変動",
+    "price": "価格"
+  },
+  "trade": {
+    "buy": "購入",
+    "sell": "売却",
+    "amount": "金額",
+    "annualReturn": "年利",
+    "submit": "購入する",
+    "confirm": "取引確認",
+    "cancel": "キャンセル",
+    "success": "取引完了",
+    "estimatedReturn": "想定リターン",
+    "paymentAmount": "支払い予定金額"
+  },
+  "time": {
+    "live": "ライブ",
+    "day": "1日",
+    "week": "1週",
+    "month": "1ヶ月",
+    "all": "全期間"
+  },
+  "social": {
+    "title": "ソーシャル",
+    "description": "トレーダーのコメントと予測を見る",
+    "subtitle": "トレーダーの意見を見てみよう",
+    "tabs": {
+      "trending": "トレンド",
+      "recent": "最新",
+      "following": "フォロー中"
+    },
+    "reply": "返信",
+    "like": "いいね",
+    "save": "保存",
+    "share": "共有"
+  },
+  "portfolio": {
+    "title": "ポートフォリオ",
+    "description": "あなたの保有ポジションとPnL",
+    "subtitle": "保有契約の管理と損益の確認",
+    "totalValue": "総資産額",
+    "totalPnl": "総損益",
+    "positions": "ポジション数",
+    "shares": "株",
+    "tabs": {
+      "positions": "保有ポジション",
+      "history": "取引履歴"
+    },
+    "noHistory": "取引履歴はまだありません"
+  },
+  "trust": {
+    "title": "信頼性とセキュリティ",
+    "description": "KIAIの安全性と規制対応について",
+    "subtitle": "KIAIは最高水準のセキュリティと透明性でお客様の資産を守ります",
+    "security": {
+      "title": "セキュリティ",
+      "description": "最先端の暗号化技術と多要素認証で、お客様のアカウントと資産を保護します"
+    },
+    "privacy": {
+      "title": "プライバシー",
+      "description": "お客様の個人情報は厳重に管理され、同意なく第三者に共有されることはありません"
+    },
+    "regulation": {
+      "title": "規制対応",
+      "description": "関連する金融規制を遵守し、透明性のある運営を行っています"
+    },
+    "transparency": {
+      "title": "透明性",
+      "description": "市場データ、手数料、運営方針をすべて公開しています"
+    },
+    "faqTitle": "よくある質問",
+    "faq1": {
+      "question": "KIAIの資金はどのように保護されていますか？",
+      "answer": "お客様の資金は分別管理され、独立した信託口座で保管されています。"
+    },
+    "faq2": {
+      "question": "予測市場とは何ですか？",
+      "answer": "予測市場は、将来の出来事の結果を取引できるプラットフォームです。参加者は結果を予測し、正しければ利益を得られます。"
+    },
+    "faq3": {
+      "question": "取引に手数料はかかりますか？",
+      "answer": "取引手数料は非常に低く設定されており、詳細は各市場ページで確認できます。"
+    },
+    "faq4": {
+      "question": "出金にはどれくらい時間がかかりますか？",
+      "answer": "通常、出金リクエストは1-3営業日以内に処理されます。"
+    },
+    "faq5": {
+      "question": "日本から利用できますか？",
+      "answer": "はい、日本のお客様にもご利用いただけます。日本語サポートも充実しています。"
+    },
+    "legalTitle": "法的文書",
+    "termsOfService": "利用規約",
+    "privacyPolicy": "プライバシーポリシー",
+    "riskDisclosure": "リスク開示",
+    "amlPolicy": "AML/KYCポリシー"
+  },
+  "research": {
+    "title": "リサーチ",
+    "description": "市場分析と予測に関する記事",
+    "subtitle": "専門家による分析と市場インサイト",
+    "minRead": "分で読めます",
+    "moreComingSoon": "さらに多くの記事を準備中",
+    "stayTuned": "最新の分析記事をお届けします"
+  },
+  "auth": {
+    "login": "ログイン",
+    "loginDescription": "KIAIアカウントにログイン",
+    "loginTitle": "おかえりなさい",
+    "loginSubtitle": "アカウントにログインして取引を始めましょう",
+    "signup": "新規登録",
+    "signupDescription": "KIAIアカウントを作成",
+    "signupTitle": "アカウント作成",
+    "signupSubtitle": "KIAIで予測市場を始めましょう",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "name": "お名前",
+    "namePlaceholder": "山田太郎",
+    "forgotPassword": "パスワードを忘れた方",
+    "loggingIn": "ログイン中...",
+    "creatingAccount": "アカウント作成中...",
+    "noAccount": "アカウントをお持ちでない方は",
+    "haveAccount": "すでにアカウントをお持ちの方は",
+    "signupLink": "新規登録",
+    "loginLink": "ログイン",
+    "agreeToTerms": "以下に同意します：",
+    "termsLink": "利用規約",
+    "privacyLink": "プライバシーポリシー",
+    "and": "および",
+    "passwordHint": "8文字以上で設定してください"
+  },
+  "settings": {
+    "title": "設定",
+    "description": "アカウント設定の管理",
+    "subtitle": "言語、テーマ、通知などを設定",
+    "language": {
+      "title": "言語設定",
+      "select": "表示言語"
+    },
+    "theme": {
+      "title": "テーマ設定",
+      "select": "テーマを選択",
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "システム設定に従う"
+    },
+    "notifications": {
+      "title": "通知設定",
+      "trades": "取引通知",
+      "tradesDesc": "取引が約定した際に通知を受け取る",
+      "priceAlerts": "価格アラート",
+      "priceAlertsDesc": "設定した価格に達した際に通知を受け取る",
+      "news": "ニュース",
+      "newsDesc": "市場に関連するニュースを受け取る",
+      "marketing": "マーケティング",
+      "marketingDesc": "プロモーションやお知らせを受け取る"
+    },
+    "account": {
+      "title": "アカウント",
+      "security": "セキュリティ設定",
+      "deleteAccount": "アカウントを削除"
+    }
+  },
+  "home": {
+    "title": "KIAI - 日本初の予測市場",
+    "description": "政治、経済、スポーツなど、あらゆる事象を取引",
+    "featuredCollections": "特集コレクション",
+    "markets": "マーケット",
+    "customize": "カスタマイズ",
+    "collections": {
+      "nbaPlayoffs": "NBAプレーオフ",
+      "nhlPlayoffs": "NHLプレーオフ",
+      "elections2026": "2026年選挙"
+    },
+    "trending": "注目のマーケット",
+    "byCategory": "カテゴリ別"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "noResults": "結果が見つかりません",
+    "seeAll": "すべて見る",
+    "customize": "カスタマイズ"
+  },
+  "footer": {
+    "company": "会社情報",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "support": "サポート"
+  }
+}

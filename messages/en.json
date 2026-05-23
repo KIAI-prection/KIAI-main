@@ -1,0 +1,243 @@
+{
+  "nav": {
+    "markets": "Markets",
+    "live": "Live",
+    "social": "Social",
+    "trust": "Trust",
+    "research": "Research",
+    "deposit": "Deposit",
+    "search": "Trade on anything"
+  },
+  "categories": {
+    "trending": "Trending",
+    "elections": "Elections",
+    "politics": "Politics",
+    "sports": "Sports",
+    "culture": "Culture",
+    "crypto": "Crypto",
+    "commodities": "Commodities",
+    "climate": "Climate",
+    "economics": "Economics",
+    "mentions": "Mentions",
+    "finance": "Finance",
+    "tech": "Tech & Science"
+  },
+  "sports": {
+    "tennis": "Tennis",
+    "soccer": "Soccer",
+    "golf": "Golf",
+    "basketball": "Basketball",
+    "hockey": "Hockey",
+    "baseball": "Baseball",
+    "cricket": "Cricket",
+    "football": "Football",
+    "boxing": "Boxing",
+    "racing": "Racing",
+    "mma": "MMA",
+    "rugby": "Rugby",
+    "afl": "AFL",
+    "lacrosse": "Lacrosse",
+    "other": "Other"
+  },
+  "market": {
+    "live": "LIVE",
+    "upcoming": "Upcoming",
+    "closed": "Closed",
+    "volume": "Volume",
+    "markets": "markets",
+    "yes": "Yes",
+    "no": "No",
+    "buy": "Buy",
+    "sell": "Sell",
+    "chance": "Chance",
+    "change": "Change",
+    "price": "Price"
+  },
+  "trade": {
+    "buy": "Buy",
+    "sell": "Sell",
+    "amount": "Amount",
+    "annualReturn": "Annual Return",
+    "submit": "Place Order",
+    "confirm": "Confirm Trade",
+    "cancel": "Cancel",
+    "success": "Trade Complete",
+    "estimatedReturn": "Est. Return",
+    "paymentAmount": "Payment Amount"
+  },
+  "time": {
+    "live": "LIVE",
+    "day": "1D",
+    "week": "1W",
+    "month": "1M",
+    "all": "ALL"
+  },
+  "social": {
+    "title": "Social",
+    "description": "See traders' comments and predictions",
+    "subtitle": "See what traders are saying",
+    "tabs": {
+      "trending": "Trending",
+      "recent": "Recent",
+      "following": "Following"
+    },
+    "reply": "Reply",
+    "like": "Like",
+    "save": "Save",
+    "share": "Share"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "description": "Your positions and PnL",
+    "subtitle": "Manage your contracts and track profit & loss",
+    "totalValue": "Total Value",
+    "totalPnl": "Total P&L",
+    "positions": "Positions",
+    "shares": "shares",
+    "tabs": {
+      "positions": "Positions",
+      "history": "History"
+    },
+    "noHistory": "No trade history yet"
+  },
+  "trust": {
+    "title": "Trust & Security",
+    "description": "Learn about KIAI's security and compliance",
+    "subtitle": "KIAI protects your assets with the highest standards of security and transparency",
+    "security": {
+      "title": "Security",
+      "description": "State-of-the-art encryption and multi-factor authentication protect your account and assets"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Your personal information is strictly managed and never shared with third parties without consent"
+    },
+    "regulation": {
+      "title": "Compliance",
+      "description": "We operate in compliance with relevant financial regulations with full transparency"
+    },
+    "transparency": {
+      "title": "Transparency",
+      "description": "Market data, fees, and operational policies are all publicly disclosed"
+    },
+    "faqTitle": "Frequently Asked Questions",
+    "faq1": {
+      "question": "How are funds protected on KIAI?",
+      "answer": "Customer funds are segregated and held in independent trust accounts."
+    },
+    "faq2": {
+      "question": "What is a prediction market?",
+      "answer": "A prediction market is a platform where you can trade on the outcomes of future events. Participants predict outcomes and profit if correct."
+    },
+    "faq3": {
+      "question": "Are there trading fees?",
+      "answer": "Trading fees are set very low, and details can be found on each market page."
+    },
+    "faq4": {
+      "question": "How long do withdrawals take?",
+      "answer": "Withdrawal requests are typically processed within 1-3 business days."
+    },
+    "faq5": {
+      "question": "Can I use KIAI from Japan?",
+      "answer": "Yes, KIAI is available to customers in Japan with full Japanese language support."
+    },
+    "legalTitle": "Legal Documents",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "riskDisclosure": "Risk Disclosure",
+    "amlPolicy": "AML/KYC Policy"
+  },
+  "research": {
+    "title": "Research",
+    "description": "Market analysis and prediction articles",
+    "subtitle": "Expert analysis and market insights",
+    "minRead": "min read",
+    "moreComingSoon": "More articles coming soon",
+    "stayTuned": "Stay tuned for the latest analysis"
+  },
+  "auth": {
+    "login": "Log In",
+    "loginDescription": "Log in to your KIAI account",
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Log in to your account to start trading",
+    "signup": "Sign Up",
+    "signupDescription": "Create a KIAI account",
+    "signupTitle": "Create Account",
+    "signupSubtitle": "Start trading on prediction markets with KIAI",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "namePlaceholder": "John Doe",
+    "forgotPassword": "Forgot password?",
+    "loggingIn": "Logging in...",
+    "creatingAccount": "Creating account...",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "signupLink": "Sign up",
+    "loginLink": "Log in",
+    "agreeToTerms": "I agree to the",
+    "termsLink": "Terms of Service",
+    "privacyLink": "Privacy Policy",
+    "and": "and",
+    "passwordHint": "Must be at least 8 characters"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account settings",
+    "subtitle": "Configure language, theme, notifications, and more",
+    "language": {
+      "title": "Language",
+      "select": "Display Language"
+    },
+    "theme": {
+      "title": "Theme",
+      "select": "Select Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "trades": "Trade Notifications",
+      "tradesDesc": "Get notified when your trades are executed",
+      "priceAlerts": "Price Alerts",
+      "priceAlertsDesc": "Get notified when prices reach your targets",
+      "news": "News",
+      "newsDesc": "Receive market-related news",
+      "marketing": "Marketing",
+      "marketingDesc": "Receive promotions and announcements"
+    },
+    "account": {
+      "title": "Account",
+      "security": "Security Settings",
+      "deleteAccount": "Delete Account"
+    }
+  },
+  "home": {
+    "title": "KIAI - Japan's First Prediction Market",
+    "description": "Trade on politics, economics, sports, and more",
+    "featuredCollections": "Featured Collections",
+    "markets": "markets",
+    "customize": "Customize",
+    "collections": {
+      "nbaPlayoffs": "NBA Playoffs",
+      "nhlPlayoffs": "NHL Playoffs",
+      "elections2026": "2026 Elections"
+    },
+    "trending": "Trending Markets",
+    "byCategory": "By Category"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "noResults": "No results found",
+    "seeAll": "See All",
+    "customize": "Customize"
+  },
+  "footer": {
+    "company": "Company",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "support": "Support"
+  }
+}
