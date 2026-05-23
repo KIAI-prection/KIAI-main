@@ -1,0 +1,280 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* KIAI Design System - Light Mode */
+  
+  /* Background */
+  --background: #FFFFFF;
+  --background-secondary: #FAFAFA;
+  --background-tertiary: #F4F4F5;
+  
+  /* Foreground / Text */
+  --foreground: #0A0A0A;
+  --foreground-secondary: #525252;
+  --foreground-muted: #A1A1AA;
+  
+  /* Card */
+  --card: #FAFAFA;
+  --card-foreground: #0A0A0A;
+  
+  /* Popover */
+  --popover: #FFFFFF;
+  --popover-foreground: #0A0A0A;
+  
+  /* Primary (KIAI Red) */
+  --primary: #DC2626;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #B91C1C;
+  --primary-light: #FEE2E2;
+  
+  /* Secondary (Black) */
+  --secondary: #18181B;
+  --secondary-foreground: #FFFFFF;
+  
+  /* Muted */
+  --muted: #F4F4F5;
+  --muted-foreground: #A1A1AA;
+  
+  /* Accent */
+  --accent: #F4F4F5;
+  --accent-foreground: #0A0A0A;
+  
+  /* Destructive */
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  
+  /* Border */
+  --border: #E5E5E5;
+  --border-strong: #D4D4D8;
+  
+  /* Input */
+  --input: #E5E5E5;
+  
+  /* Ring */
+  --ring: #DC2626;
+  
+  /* Market Colors */
+  --yes-color: #DC2626;
+  --yes-bg: #FEF2F2;
+  --no-color: #18181B;
+  --no-bg: #F4F4F5;
+  
+  /* Signal Colors */
+  --live-color: #DC2626;
+  --up-color: #16A34A;
+  --down-color: #DC2626;
+  
+  /* Chart Colors */
+  --chart-1: #DC2626;
+  --chart-2: #18181B;
+  --chart-3: #525252;
+  --chart-4: #A1A1AA;
+  --chart-5: #16A34A;
+  
+  /* Radius */
+  --radius: 0.75rem;
+  
+  /* Sidebar */
+  --sidebar: #FAFAFA;
+  --sidebar-foreground: #0A0A0A;
+  --sidebar-primary: #DC2626;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F4F4F5;
+  --sidebar-accent-foreground: #0A0A0A;
+  --sidebar-border: #E5E5E5;
+  --sidebar-ring: #DC2626;
+}
+
+.dark {
+  /* KIAI Design System - Dark Mode */
+  
+  /* Background */
+  --background: #0A0A0A;
+  --background-secondary: #141414;
+  --background-tertiary: #1F1F1F;
+  
+  /* Foreground / Text */
+  --foreground: #FAFAFA;
+  --foreground-secondary: #A1A1AA;
+  --foreground-muted: #71717A;
+  
+  /* Card */
+  --card: #141414;
+  --card-foreground: #FAFAFA;
+  
+  /* Popover */
+  --popover: #141414;
+  --popover-foreground: #FAFAFA;
+  
+  /* Primary (KIAI Red - same in dark) */
+  --primary: #DC2626;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #EF4444;
+  --primary-light: #450A0A;
+  
+  /* Secondary */
+  --secondary: #FAFAFA;
+  --secondary-foreground: #0A0A0A;
+  
+  /* Muted */
+  --muted: #1F1F1F;
+  --muted-foreground: #71717A;
+  
+  /* Accent */
+  --accent: #1F1F1F;
+  --accent-foreground: #FAFAFA;
+  
+  /* Destructive */
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  
+  /* Border */
+  --border: #262626;
+  --border-strong: #3F3F46;
+  
+  /* Input */
+  --input: #262626;
+  
+  /* Ring */
+  --ring: #DC2626;
+  
+  /* Market Colors */
+  --yes-color: #DC2626;
+  --yes-bg: #450A0A;
+  --no-color: #FAFAFA;
+  --no-bg: #1F1F1F;
+  
+  /* Signal Colors */
+  --live-color: #DC2626;
+  --up-color: #22C55E;
+  --down-color: #EF4444;
+  
+  /* Chart Colors */
+  --chart-1: #DC2626;
+  --chart-2: #FAFAFA;
+  --chart-3: #A1A1AA;
+  --chart-4: #71717A;
+  --chart-5: #22C55E;
+  
+  /* Sidebar */
+  --sidebar: #141414;
+  --sidebar-foreground: #FAFAFA;
+  --sidebar-primary: #DC2626;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1F1F1F;
+  --sidebar-accent-foreground: #FAFAFA;
+  --sidebar-border: #262626;
+  --sidebar-ring: #DC2626;
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-background-tertiary: var(--background-tertiary);
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-yes: var(--yes-color);
+  --color-yes-bg: var(--yes-bg);
+  --color-no: var(--no-color);
+  --color-no-bg: var(--no-bg);
+  --color-live: var(--live-color);
+  --color-up: var(--up-color);
+  --color-down: var(--down-color);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Tabular nums for prices and percentages */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* KIAI Custom Animations */
+@keyframes pulse-live {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-live {
+  animation: pulse-live 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes flash-up {
+  0% {
+    background-color: rgba(22, 163, 74, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes flash-down {
+  0% {
+    background-color: rgba(220, 38, 38, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.flash-up {
+  animation: flash-up 150ms ease-out;
+}
+
+.flash-down {
+  animation: flash-down 150ms ease-out;
+}
