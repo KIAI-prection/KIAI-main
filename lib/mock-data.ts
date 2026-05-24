@@ -306,3 +306,210 @@ export function getMarketById(id: string): Market | undefined {
 export function getAllMarkets(): Market[] {
   return mockMarkets;
 }
+
+export function getLiveMarkets(): Market[] {
+  return mockMarkets.filter((market) => market.status === "live");
+}
+
+// Mock social posts data
+export interface SocialPost {
+  id: string;
+  author: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  content: {
+    ja: string;
+    en: string;
+  };
+  timestamp: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  marketId?: string;
+}
+
+export const mockSocialPosts: SocialPost[] = [
+  {
+    id: "post-1",
+    author: {
+      name: "田中太郎",
+      username: "@tanaka_taro",
+      avatar: "/avatars/user1.png",
+    },
+    content: {
+      ja: "フランスがワールドカップで優勝すると思う。ムバッペが絶好調だ！",
+      en: "I think France will win the World Cup. Mbappe is in great form!",
+    },
+    timestamp: "2h ago",
+    likes: 124,
+    comments: 32,
+    shares: 18,
+    marketId: "world-cup-2026",
+  },
+  {
+    id: "post-2",
+    author: {
+      name: "Crypto Mike",
+      username: "@crypto_mike",
+      avatar: "/avatars/user2.png",
+    },
+    content: {
+      ja: "ビットコインは年末までに$100Kを超える。強気相場が続く。",
+      en: "Bitcoin will surpass $100K by year end. Bull run continues.",
+    },
+    timestamp: "4h ago",
+    likes: 89,
+    comments: 45,
+    shares: 22,
+    marketId: "bitcoin-100k",
+  },
+  {
+    id: "post-3",
+    author: {
+      name: "Sports Analyst",
+      username: "@sports_pro",
+      avatar: "/avatars/user3.png",
+    },
+    content: {
+      ja: "NBAファイナルはセルティックスが有利。ディフェンスが強すぎる。",
+      en: "Celtics are favorites for NBA Finals. Their defense is too strong.",
+    },
+    timestamp: "6h ago",
+    likes: 201,
+    comments: 67,
+    shares: 34,
+    marketId: "nba-finals-2026",
+  },
+];
+
+// Mock articles data for research page
+export interface Article {
+  id: string;
+  title: {
+    ja: string;
+    en: string;
+  };
+  summary: {
+    ja: string;
+    en: string;
+  };
+  author: string;
+  publishedAt: string;
+  readTime: number;
+  category: string;
+  imageUrl: string;
+}
+
+export const mockArticles: Article[] = [
+  {
+    id: "article-1",
+    title: {
+      ja: "2026年ワールドカップ：注目すべき5つのチーム",
+      en: "2026 World Cup: 5 Teams to Watch",
+    },
+    summary: {
+      ja: "来年のワールドカップで優勝候補となるチームを分析します。",
+      en: "Analyzing the top contenders for next year's World Cup.",
+    },
+    author: "Sports Weekly",
+    publishedAt: "2025-05-20",
+    readTime: 8,
+    category: "sports",
+    imageUrl: "/images/worldcup.jpg",
+  },
+  {
+    id: "article-2",
+    title: {
+      ja: "暗号資産市場の2026年予測",
+      en: "Crypto Market Predictions for 2026",
+    },
+    summary: {
+      ja: "ビットコインとイーサリアムの価格予測と市場動向。",
+      en: "Price predictions and market trends for Bitcoin and Ethereum.",
+    },
+    author: "Crypto Insights",
+    publishedAt: "2025-05-18",
+    readTime: 12,
+    category: "crypto",
+    imageUrl: "/images/crypto.jpg",
+  },
+  {
+    id: "article-3",
+    title: {
+      ja: "2028年米大統領選：早期分析",
+      en: "2028 US Presidential Race: Early Analysis",
+    },
+    summary: {
+      ja: "次期大統領選の有力候補と選挙動向を解説。",
+      en: "Breaking down the frontrunners and electoral trends.",
+    },
+    author: "Political Review",
+    publishedAt: "2025-05-15",
+    readTime: 10,
+    category: "politics",
+    imageUrl: "/images/politics.jpg",
+  },
+];
+
+// Mock positions data for portfolio page
+export interface Position {
+  id: string;
+  marketId: string;
+  marketTitle: {
+    ja: string;
+    en: string;
+  };
+  selection: string;
+  shares: number;
+  avgPrice: number;
+  currentPrice: number;
+  pnl: number;
+  pnlPercent: number;
+}
+
+export const mockPositions: Position[] = [
+  {
+    id: "pos-1",
+    marketId: "world-cup-2026",
+    marketTitle: {
+      ja: "2026年 FIFAワールドカップ 優勝国",
+      en: "2026 FIFA World Cup Winner",
+    },
+    selection: "France",
+    shares: 100,
+    avgPrice: 0.15,
+    currentPrice: 0.18,
+    pnl: 3.0,
+    pnlPercent: 20.0,
+  },
+  {
+    id: "pos-2",
+    marketId: "bitcoin-100k",
+    marketTitle: {
+      ja: "ビットコイン 2026年末に$100K超え",
+      en: "Bitcoin above $100K by end of 2026",
+    },
+    selection: "Yes",
+    shares: 50,
+    avgPrice: 0.55,
+    currentPrice: 0.62,
+    pnl: 3.5,
+    pnlPercent: 12.7,
+  },
+  {
+    id: "pos-3",
+    marketId: "nba-finals-2026",
+    marketTitle: {
+      ja: "2026年 NBAファイナル 優勝チーム",
+      en: "2026 NBA Finals Champion",
+    },
+    selection: "Boston Celtics",
+    shares: 75,
+    avgPrice: 0.28,
+    currentPrice: 0.24,
+    pnl: -3.0,
+    pnlPercent: -14.3,
+  },
+];
