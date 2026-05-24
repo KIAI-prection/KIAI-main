@@ -33,7 +33,7 @@ export interface Market {
   trending?: boolean;
 }
 
-const mockMarkets: Market[] = [
+export const mockMarkets: Market[] = [
   {
     id: "world-cup-2026",
     title: {
@@ -273,6 +273,22 @@ const mockMarkets: Market[] = [
     marketCount: 1,
     trending: true,
   },
+];
+
+// Mock chart data for trending hero
+export const mockChartData: { time: string; value: number }[] = [
+  { time: "Jan", value: 45 },
+  { time: "Feb", value: 52 },
+  { time: "Mar", value: 48 },
+  { time: "Apr", value: 61 },
+  { time: "May", value: 55 },
+  { time: "Jun", value: 67 },
+  { time: "Jul", value: 62 },
+  { time: "Aug", value: 70 },
+  { time: "Sep", value: 65 },
+  { time: "Oct", value: 72 },
+  { time: "Nov", value: 68 },
+  { time: "Dec", value: 75 },
 ];
 
 export function getTrendingMarkets(): Market[] {
