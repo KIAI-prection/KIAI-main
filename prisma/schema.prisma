@@ -1,0 +1,373 @@
+// This is the KIAI Prisma schema.
+// Database: Neon (serverless PostgreSQL)
+// Generator: prisma-client-js
+//
+// Architecture: one market pool, two payment rails (Base + Sui).
+// On-chain contracts are custody vaults only — pricing and pool state live here.
+// Chain = how the user pays and receives winnings, not which market they are in.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// In Prisma 7, the database URL is configured in prisma.config.ts (project root).
+// Do not add url = env("DATABASE_URL") here — it causes a P1012 validation error.
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Chain {
+  SUI
+  BASE
+}
+
+enum MarketLifecycle {
+  DRAFT
+  REVIEWED
+  DEPLOY_PENDING
+  DEPLOY_FAILED
+  LIVE
+  PAUSED
+  CLOSED
+  RESOLVING
+  DISPUTED
+  RESOLVED
+  SETTLING
+  SETTLEMENT_FAILED
+  SETTLED
+  ARCHIVED
+}
+
+enum OrderIntentStatus {
+  INTENT_CREATED
+  QUOTE_REQUESTED
+  QUOTE_REJECTED
+  QUOTE_READY
+  COMPLIANCE_CHECKED
+  BLOCKED
+  WALLET_PENDING
+  WALLET_REJECTED
+  SUBMITTED_TO_CHAIN
+  CHAIN_FAILED
+  CHAIN_CONFIRMED
+  INDEXING_PENDING
+  INDEXING_LAGGED
+  RECONCILED
+  PORTFOLIO_FINAL
+}
+
+enum ResolutionStatus {
+  PENDING
+  PROPOSED
+  DISPUTE_WINDOW
+  DISPUTED
+  ADJUDICATING
+  FINALIZING
+  FINAL
+  FAILED
+}
+
+enum CollateralAsset {
+  USDC_BASE_SEPOLIA
+  USDC_SUI_TESTNET
+}
+
+// ---------------------------------------------------------------------------
+// Market — one product-level prediction event
+// Pricing, pool state (LMSR), and probabilities are managed by the backend.
+// ---------------------------------------------------------------------------
+
+model Market {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  titleEn         String
+  titleJa         String          @default("")
+  subtitleEn      String          @default("")
+  subtitleJa      String          @default("")
+  category        String
+  categoryLabelEn String
+  categoryLabelJa String          @default("")
+  lifecycle       MarketLifecycle @default(DRAFT)
+  statusInfoEn    String?
+  statusInfoJa    String?
+
+  // Pool state — LMSR backend AMM
+  // b = liquidity parameter; higher b = more liquidity, more house exposure
+  lmsrB           Float           @default(100)
+  // qYes/qNo = cumulative shares bought for each outcome (LMSR quantity vector)
+  qYes            Float           @default(0)
+  qNo             Float           @default(0)
+  totalLiquidityUsd Decimal       @default(0) @db.Decimal(65, 30)
+
+  volumeUsd       Decimal         @default(0) @db.Decimal(65, 30)
+  marketCount     Int             @default(0)
+  openAt          DateTime?
+  closeAt         DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  outcomes        Outcome[]
+  chartPoints     MarketChartPoint[]
+  chainDeployments ChainDeployment[]
+  compliancePolicy CompliancePolicy?
+  resolution      Resolution?
+  orderIntents    OrderIntent[]
+}
+
+// ---------------------------------------------------------------------------
+// Outcome — one possible result (e.g. "Hakuho wins")
+// ---------------------------------------------------------------------------
+
+model Outcome {
+  id        String  @id @default(cuid())
+  marketId  String
+  slug      String
+  name      String
+  flag      String?
+  // Current implied probability from LMSR (0–100 integer, percent)
+  chance    Int     @default(50)
+  // Price for buying YES or NO position (in cents per share, 0–100)
+  priceYes  Int     @default(50)
+  priceNo   Int     @default(50)
+  change    Int?
+  odds      String?
+  secondary String?
+  sortOrder Int     @default(0)
+
+  market    Market  @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@unique([marketId, slug])
+}
+
+// ---------------------------------------------------------------------------
+// MarketChartPoint — historical price series for the UI chart
+// ---------------------------------------------------------------------------
+
+model MarketChartPoint {
+  id        String @id @default(cuid())
+  marketId  String
+  time      String
+  value     Int
+  sortOrder Int    @default(0)
+
+  market    Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// ChainDeployment — per-chain custody vault contract for this market
+// One market can have both a Sui and a Base deployment.
+// Both rails serve the same LMSR pool — users just pick which chain to pay on.
+// ---------------------------------------------------------------------------
+
+model ChainDeployment {
+  id               String          @id @default(cuid())
+  marketId         String
+  chain            Chain
+  collateral       CollateralAsset
+  // On-chain contract address (Base) or package::module ID (Sui)
+  contractAddress  String?
+  // Pool/vault object ID for Sui; same as contractAddress for Base
+  poolAddress      String?
+  deployStatus     String          @default("not_deployed")
+  liquidityUsd     Decimal         @default(0) @db.Decimal(65, 30)
+  // Last indexed block (Base) or checkpoint sequence (Sui)
+  lastIndexedBlock BigInt?
+  failureReason    String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  market           Market          @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@unique([marketId, chain])
+}
+
+// ---------------------------------------------------------------------------
+// CompliancePolicy — regional and KYC rules per market
+// ---------------------------------------------------------------------------
+
+model CompliancePolicy {
+  id              String    @id @default(cuid())
+  marketId        String    @unique
+  allowedRegions  String[]  @default([])
+  blockedRegions  String[]  @default([])
+  // kycTierRequired: 0 = none, 1 = basic, 2 = full; modeled for future production
+  kycTierRequired Int       @default(0)
+  maxPositionUsd  Decimal?  @db.Decimal(65, 30)
+  maxDailyUsd     Decimal?  @db.Decimal(65, 30)
+  legalNotesEn    String?
+  legalNotesJa    String?
+
+  market          Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Resolution — market outcome process
+// ---------------------------------------------------------------------------
+
+model Resolution {
+  id              String           @id @default(cuid())
+  marketId        String           @unique
+  status          ResolutionStatus @default(PENDING)
+  proposedOutcome String?
+  finalOutcome    String?
+  // sourceSnapshot: JSON object with official source URLs, screenshots, timestamps
+  sourceSnapshot  Json?
+  proposer        String?
+  disputeDeadline DateTime?
+  // finalizationTx: chain tx hash or Sui digest when outcome is written on-chain
+  finalizationTx  String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  market          Market           @relation(fields: [marketId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Quote — price snapshot issued before an order is submitted
+// Expires quickly. Must be refreshed before wallet submission.
+// ---------------------------------------------------------------------------
+
+model Quote {
+  id              String    @id @default(cuid())
+  marketId        String
+  outcomeId       String
+  chain           Chain
+  side            String    // "yes" | "no"
+  amountUsd       Decimal   @db.Decimal(65, 30)
+  // LMSR-computed price and shares at quote time
+  pricePerShare   Decimal   @db.Decimal(65, 30)
+  sharesOut       Decimal   @db.Decimal(65, 30)
+  totalCostUsd    Decimal   @db.Decimal(65, 30)
+  feesUsd         Decimal   @default(0) @db.Decimal(65, 30)
+  // Outcome probabilities at quote time (snapshot for honesty)
+  yesProb         Int       // 0–100
+  noProb          Int       // 0–100
+  status          String    @default("ready") // "ready" | "expired" | "rejected"
+  expiresAt       DateTime
+  walletAddress   String?
+  createdAt       DateTime  @default(now())
+
+  orderIntents    OrderIntent[]
+}
+
+// ---------------------------------------------------------------------------
+// OrderIntent — a user's intent to trade, before wallet submission
+// ---------------------------------------------------------------------------
+
+model OrderIntent {
+  id             String            @id @default(cuid())
+  marketId       String
+  outcomeId      String?
+  chain          Chain
+  side           String            // "yes" | "no"
+  amountUsd      Decimal           @db.Decimal(65, 30)
+  status         OrderIntentStatus @default(INTENT_CREATED)
+  walletAddress  String?
+  // quoteId: the Quote this order was based on
+  quoteId        String?
+  // txHash: Base transaction hash or Sui digest after submission
+  txHash         String?
+  failureReason  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  market         Market            @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  quote          Quote?            @relation(fields: [quoteId], references: [id])
+  trades         Trade[]
+}
+
+// ---------------------------------------------------------------------------
+// Trade — confirmed execution record after chain + indexer confirmation
+// A trade is only created after RECONCILED state — never before.
+// ---------------------------------------------------------------------------
+
+model Trade {
+  id            String   @id @default(cuid())
+  orderIntentId String
+  chain         Chain
+  // txHash: Base transaction hash or Sui digest
+  txHash        String?
+  sharesAmt     Decimal  @db.Decimal(65, 30)
+  avgPrice      Decimal  @db.Decimal(65, 30)
+  feesUsd       Decimal  @default(0) @db.Decimal(65, 30)
+  // status mirrors the terminal OrderIntentStatus at trade creation time
+  status        String   @default("reconciled")
+  createdAt     DateTime @default(now())
+
+  orderIntent   OrderIntent @relation(fields: [orderIntentId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// UserPosition — reconciled user exposure per market/outcome/chain
+// Only updated after Trade is recorded and chain event is indexed.
+// Never finalized from optimistic UI state.
+// ---------------------------------------------------------------------------
+
+model UserPosition {
+  id               String    @id @default(cuid())
+  userId           String
+  marketId         String
+  outcomeSlug      String
+  chain            Chain
+  side             String    // "yes" | "no"
+  shares           Decimal   @default(0) @db.Decimal(65, 30)
+  avgEntry         Decimal   @default(0) @db.Decimal(65, 30)
+  currentPrice     Decimal   @default(0) @db.Decimal(65, 30)
+  realizedPnlUsd   Decimal   @default(0) @db.Decimal(65, 30)
+  unrealizedPnlUsd Decimal   @default(0) @db.Decimal(65, 30)
+  claimableUsd     Decimal   @default(0) @db.Decimal(65, 30)
+  // reconciledAt: when this position was last updated from chain data
+  reconciledAt     DateTime?
+  txHash           String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([marketId])
+  @@unique([userId, marketId, outcomeSlug, chain, side])
+}
+
+// ---------------------------------------------------------------------------
+// ChainEvent — raw normalized event from Base (Envio) or Sui (custom poller)
+// This is the append-only log; reconciliation reads from here.
+// ---------------------------------------------------------------------------
+
+model ChainEvent {
+  id           String    @id @default(cuid())
+  chain        Chain
+  // blockNumber (Base) or checkpointSequence (Sui)
+  blockOrCheckpoint BigInt
+  txHash       String
+  // eventType: e.g. "PositionOpened", "MarketResolved", "ClaimPaid"
+  eventType    String
+  marketId     String?
+  walletAddress String?
+  // raw: full JSON from the indexer/event log
+  raw          Json
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([chain, txHash, eventType])
+  @@index([chain, blockOrCheckpoint])
+  @@index([marketId])
+}
+
+// ---------------------------------------------------------------------------
+// OperatorAction — audit trail for all operator actions
+// ---------------------------------------------------------------------------
+
+model OperatorAction {
+  id         String   @id @default(cuid())
+  operatorId String
+  action     String   // "create_market", "deploy", "pause", "resolve", "settle"
+  marketId   String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([operatorId])
+  @@index([marketId])
+}

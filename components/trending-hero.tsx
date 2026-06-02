@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Trophy, Vote, Tv } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LiveBadge } from "./live-badge";
 import { MarketChart } from "./market-chart";
@@ -36,7 +36,24 @@ const featuredCollections = [
 
 export function TrendingHero() {
   const t = useTranslations("home");
+  const locale = useLocale() as "en" | "ja";
   const featuredMarket = mockMarkets[0];
+  const featuredSeries = featuredMarket.contestants.slice(0, 3).map((contestant, index) => ({
+    name: contestant.name,
+    color: ["var(--chart-1)", "var(--chart-2)", "var(--chart-5)"][index],
+    data: featuredMarket.chartData.map((point, pointIndex) => ({
+      time: point.time,
+      value: Math.max(
+        1,
+        Math.min(
+          99,
+          contestant.chance +
+            (pointIndex - featuredMarket.chartData.length + 1) *
+              (index === 0 ? 0.7 : index === 1 ? -0.35 : 0.2)
+        )
+      ),
+    })),
+  }));
 
   return (
     <section className="py-8">
@@ -46,29 +63,27 @@ export function TrendingHero() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="uppercase text-xs font-medium">
-                {featuredMarket.categoryLabel}
+                {featuredMarket.categoryLabel[locale]}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                {featuredMarket.subtitle}
+                {featuredMarket.subtitle[locale]}
               </span>
             </div>
             {featuredMarket.status === "live" && (
-              <LiveBadge info={featuredMarket.statusInfo} />
+              <LiveBadge info={featuredMarket.statusInfo?.[locale]} />
             )}
           </div>
 
           <Link href={`/markets/${featuredMarket.id}`}>
             <h2 className="text-2xl font-semibold text-foreground mb-4 hover:text-brand transition-colors">
-              {featuredMarket.title}
+              {featuredMarket.title[locale]}
             </h2>
           </Link>
 
           <div className="h-[200px] mb-4">
             <MarketChart
               data={mockChartData}
-              candidates={featuredMarket.contestants
-                .slice(0, 3)
-                .map((c) => c.name)}
+              contestants={featuredSeries}
             />
           </div>
 

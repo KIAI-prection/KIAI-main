@@ -15,13 +15,20 @@ import { LanguageSwitcher } from "./language-switcher";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+type NavItem = {
+  key: "markets" | "live" | "social" | "trust" | "research";
+  href: "/markets" | "/live" | "/social" | "/trust" | "/research";
+  badge?: number;
+  hasDropdown?: boolean;
+};
+
+const navItems: readonly NavItem[] = [
   { key: "markets", href: "/markets" },
   { key: "live", href: "/live", badge: 66 },
   { key: "social", href: "/social" },
   { key: "trust", href: "/trust", hasDropdown: true },
   { key: "research", href: "/research" },
-] as const;
+];
 
 export function Header() {
   const t = useTranslations("nav");
