@@ -59,6 +59,7 @@
     "amount": "金額",
     "annualReturn": "年利",
     "submit": "購入する",
+    "connectWallet": "ウォレットを接続して取引",
     "confirm": "取引確認",
     "cancel": "キャンセル",
     "success": "取引完了",

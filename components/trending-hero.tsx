@@ -80,19 +80,19 @@ export function TrendingHero() {
             </h2>
           </Link>
 
-          <div className="h-[200px] mb-4">
+          <div className="mb-4">
             <MarketChart
               data={mockChartData}
               contestants={featuredSeries}
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             {featuredMarket.contestants.slice(0, 3).map((contestant, idx) => (
               <div
                 key={contestant.name}
                 className={`p-3 rounded-lg ${
-                  idx === 0 ? "bg-yes-bg border border-yes/20" : "bg-secondary"
+                  idx === 0 ? "bg-yes-bg border border-yes/20" : "bg-muted border border-border"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">

@@ -59,6 +59,7 @@
     "amount": "Amount",
     "annualReturn": "Annual Return",
     "submit": "Place Order",
+    "connectWallet": "Connect Wallet to Trade",
     "confirm": "Confirm Trade",
     "cancel": "Cancel",
     "success": "Trade Complete",

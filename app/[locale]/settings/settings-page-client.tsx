@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter, usePathname } from "@/i18n/navigation";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { Globe, Moon, Sun, Bell, Shield, User } from "lucide-react";
 
 export function SettingsPageClient() {
@@ -82,7 +82,12 @@ export function SettingsPageClient() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label htmlFor="theme">{t("theme.select")}</Label>
-              <Select value={theme} onValueChange={setTheme}>
+              <Select
+                value={theme ?? "light"}
+                onValueChange={(value) =>
+                  setTheme(value as "light" | "dark" | "system")
+                }
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>

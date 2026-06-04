@@ -9,17 +9,16 @@ import { MarketChart } from "@/components/market-chart";
 import { ContestantRow } from "@/components/contestant-row";
 import { TradePanel } from "@/components/trade-panel";
 import { LiveBadge } from "@/components/live-badge";
-import type { Market, Contestant } from "@/lib/mock-data";
+import type { UIMarket, UIContestant } from "@/lib/domain/market-service";
 
 interface MarketDetailClientProps {
-  market: Market;
+  market: UIMarket;
   locale: string;
 }
 
 export function MarketDetailClient({ market, locale }: MarketDetailClientProps) {
   const t = useTranslations("market");
-  const tTrade = useTranslations("trade");
-  const [selectedContestant, setSelectedContestant] = useState<Contestant | null>(
+  const [selectedContestant, setSelectedContestant] = useState<UIContestant | null>(
     market.contestants[0] || null
   );
 

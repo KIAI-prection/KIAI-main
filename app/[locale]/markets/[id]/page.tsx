@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getMarketById } from "@/lib/mock-data";
+import { getMarketByIdOrSlug } from "@/lib/adapters/markets";
 import { MarketDetailClient } from "./market-detail-client";
 
 interface MarketDetailPageProps {
@@ -9,13 +9,13 @@ interface MarketDetailPageProps {
 
 export default async function MarketDetailPage({ params }: MarketDetailPageProps) {
   const { id, locale } = await params;
-  const market = getMarketById(id);
+  const market = await getMarketByIdOrSlug(id);
 
   if (!market) {
     notFound();
   }
 
-  const t = await getTranslations("market");
+  await getTranslations("market");
 
   return <MarketDetailClient market={market} locale={locale} />;
 }

@@ -6,10 +6,10 @@ import { BarChart3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { LiveBadge } from "./live-badge";
 import { cn } from "@/lib/utils";
-import type { Market } from "@/lib/mock-data";
+import type { UIMarket } from "@/lib/domain/market-service";
 
 interface MarketCardProps {
-  market: Market;
+  market: UIMarket;
 }
 
 export function MarketCard({ market }: MarketCardProps) {

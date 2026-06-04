@@ -22,13 +22,10 @@
  *   3. effects.status is SUCCESS (not just "submitted")
  */
 
-import {
-  SuiGrpcClient,
-  Transaction,
-  fromBase64,
-  toBase64,
-  bcs,
-} from "@mysten/sui";
+import { SuiGrpcClient } from "@mysten/sui/grpc";
+import { Transaction } from "@mysten/sui/transactions";
+import { bcs } from "@mysten/sui/bcs";
+import { toBase64 } from "@mysten/sui/utils";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 
 // ---------------------------------------------------------------------------
@@ -154,10 +151,10 @@ export async function createMarketOnSui(
       ],
     });
 
-    const result = await keypair.signAndExecuteTransaction({
+    const result = await client.signAndExecuteTransaction({
       transaction: tx,
-      client,
       include: { effects: true },
+      signer: keypair,
     });
 
     // Check for failed transaction explicitly
@@ -166,8 +163,8 @@ export async function createMarketOnSui(
         ok: false,
         error: {
           kind: "effects_failed",
-          digest: result.FailedTransaction.digest ?? "unknown",
-          error: result.FailedTransaction.status?.error?.message ?? "Transaction failed",
+          digest: result.FailedTransaction.digest,
+          error: String(result.FailedTransaction.status.error ?? "Transaction failed"),
         },
       };
     }
@@ -212,10 +209,10 @@ export async function resolveMarketOnSui(
       ],
     });
 
-    const result = await keypair.signAndExecuteTransaction({
+    const result = await client.signAndExecuteTransaction({
       transaction: tx,
-      client,
       include: { effects: true },
+      signer: keypair,
     });
 
     if (result.$kind === "FailedTransaction") {
@@ -223,8 +220,8 @@ export async function resolveMarketOnSui(
         ok: false,
         error: {
           kind: "effects_failed",
-          digest: result.FailedTransaction.digest ?? "unknown",
-          error: result.FailedTransaction.status?.error?.message ?? "Resolve failed",
+          digest: result.FailedTransaction.digest,
+          error: String(result.FailedTransaction.status.error ?? "Resolve failed"),
         },
       };
     }

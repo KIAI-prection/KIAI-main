@@ -28,7 +28,6 @@ import {
   toBytes,
   type Hash,
   type Address,
-  type PublicClient,
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
@@ -72,7 +71,7 @@ export const ERC20_ABI = parseAbi([
  * Public client for read-only operations and preflight simulation.
  * Uses Base Sepolia RPC from environment (falls back to public endpoint).
  */
-export function getPublicClient(): PublicClient {
+export function getPublicClient() {
   return createPublicClient({
     chain: baseSepolia,
     transport: http(
@@ -160,7 +159,7 @@ export async function getClaimableAmount(
     abi: KIAI_VAULT_ABI,
     functionName: "claimableAmount",
     args: [marketIdToBytes32(marketId), userAddress],
-  });
+  }) as Promise<bigint>;
 }
 
 // ---------------------------------------------------------------------------

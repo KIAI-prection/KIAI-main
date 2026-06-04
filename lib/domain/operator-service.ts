@@ -9,7 +9,7 @@
  * market record, not separate per-chain markets.
  */
 
-import { MarketLifecycle, Chain, CollateralAsset } from "@prisma/client";
+import { MarketLifecycle, Chain, CollateralAsset, Prisma } from "@prisma/client";
 import { db } from "@/lib/server/db";
 
 // ---------------------------------------------------------------------------
@@ -354,6 +354,8 @@ export async function proposeResolution(
     );
   }
 
+  const resolutionSnapshot = sourceSnapshot as Prisma.InputJsonObject;
+
   await db.$transaction(async (tx) => {
     // Close market first if needed
     if (market.lifecycle === "CLOSED") {
@@ -367,7 +369,7 @@ export async function proposeResolution(
       where: { marketId },
       update: {
         proposedOutcome,
-        sourceSnapshot,
+        sourceSnapshot: resolutionSnapshot,
         proposer: operatorId,
         status: "PROPOSED",
         disputeDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48h window
@@ -375,7 +377,7 @@ export async function proposeResolution(
       create: {
         marketId,
         proposedOutcome,
-        sourceSnapshot,
+        sourceSnapshot: resolutionSnapshot,
         proposer: operatorId,
         status: "PROPOSED",
         disputeDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000),
@@ -400,9 +402,8 @@ export async function finalizeResolution(
 ) {
   const market = await db.market.findUnique({
     where: { id: marketId },
-    select: { lifecycle: true },
-    include: { resolution: true } as never,
-  }) as (typeof market & { resolution: { status: string } | null }) | null;
+    include: { resolution: true },
+  });
 
   if (!market) throw new Error(`Market ${marketId} not found.`);
   if (market.lifecycle !== "RESOLVING") {

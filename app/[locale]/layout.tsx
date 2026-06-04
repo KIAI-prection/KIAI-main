@@ -9,6 +9,7 @@ import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
 import { CategoryNav } from "@/components/category-nav";
+import { WalletProvider } from "@/lib/providers/wallet-provider";
 import "../globals.css";
 
 const geist = Geist({
@@ -79,11 +80,13 @@ export default async function LocaleLayout({
           disableTransitionOnChange
         >
           <NextIntlClientProvider messages={messages}>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <CategoryNav />
-              <main className="flex-1">{children}</main>
-            </div>
+            <WalletProvider>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <CategoryNav />
+                <main className="flex-1">{children}</main>
+              </div>
+            </WalletProvider>
           </NextIntlClientProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}

@@ -1,24 +1,71 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { mockPositions } from "@/lib/mock-data";
 import { Link } from "@/i18n/navigation";
-import { TrendingUp, TrendingDown, Wallet, PieChart, History } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PieChart, History, Loader2 } from "lucide-react";
+import { useKIAIWallet } from "@/lib/hooks/use-kiai-wallet";
+import type { Position } from "@/lib/mock-data";
 
 export function PortfolioPageClient() {
   const t = useTranslations("portfolio");
   const locale = useLocale();
+  const { walletAddress, isConnected } = useKIAIWallet("BASE");
 
-  const totalValue = mockPositions.reduce(
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pendingOrders, setPendingOrders] = useState(0);
+
+  useEffect(() => {
+    if (!walletAddress) return;
+    setLoading(true);
+    fetch(`/api/portfolio?walletAddress=${walletAddress}`)
+      .then((r) => r.json())
+      .then((data) => {
+        // Map API positions to UI Position shape
+        setPositions(
+          (data.positions ?? []).map(
+            (p: {
+              id: string;
+              marketId: string;
+              outcomeSlug: string;
+              side: string;
+              shares: number;
+              avgEntry: number;
+              currentPrice: number;
+              unrealizedPnlUsd: number;
+            }) => ({
+              id: p.id,
+              marketId: p.marketId,
+              marketTitle: { en: p.outcomeSlug, ja: p.outcomeSlug },
+              type: p.side as "yes" | "no",
+              candidate: p.outcomeSlug,
+              shares: p.shares,
+              avgPrice: p.avgEntry,
+              currentPrice: p.currentPrice,
+              pnl: p.unrealizedPnlUsd,
+              pnlPercent:
+                p.avgEntry > 0 ? (p.unrealizedPnlUsd / (p.shares * p.avgEntry)) * 100 : 0,
+            })
+          )
+        );
+        setPendingOrders((data.pendingOrders ?? []).length);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [walletAddress]);
+
+  const totalValue = positions.reduce(
     (sum, pos) => sum + pos.shares * pos.currentPrice,
     0
   );
-  const totalPnl = mockPositions.reduce((sum, pos) => sum + pos.pnl, 0);
-  const totalPnlPercent = (totalPnl / (totalValue - totalPnl)) * 100;
+  const totalPnl = positions.reduce((sum, pos) => sum + pos.pnl, 0);
+  const totalPnlPercent = totalValue > totalPnl && totalValue > 0
+    ? (totalPnl / (totalValue - totalPnl)) * 100
+    : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale === "ja" ? "ja-JP" : "en-US", {
@@ -88,7 +135,12 @@ export function PortfolioPageClient() {
             <div>
               <div className="text-sm text-muted-foreground">{t("positions")}</div>
               <div className="text-xl font-bold tabular-nums">
-                {mockPositions.length}
+                {positions.length}
+                {pendingOrders > 0 && (
+                  <span className="ml-1 text-sm font-normal text-muted-foreground">
+                    (+{pendingOrders} pending)
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -108,8 +160,25 @@ export function PortfolioPageClient() {
         </TabsList>
 
         <TabsContent value="positions" className="mt-4">
+          {!isConnected && (
+            <Card className="p-8 text-center">
+              <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Connect your wallet to see positions</p>
+            </Card>
+          )}
+          {isConnected && loading && (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {isConnected && !loading && positions.length === 0 && (
+            <Card className="p-8 text-center">
+              <PieChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No reconciled positions yet</p>
+            </Card>
+          )}
           <div className="space-y-3">
-            {mockPositions.map((position) => (
+            {positions.map((position) => (
               <Card key={position.id} className="p-4 hover:border-brand transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">

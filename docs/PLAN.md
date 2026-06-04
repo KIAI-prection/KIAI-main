@@ -1190,10 +1190,25 @@ Goal:
 
 - Convert real chain events and transaction observations into trustworthy portfolio and market state.
 
-Source gate:
+Source gate (updated 2026-06-03):
 
-- Refresh Ponder, Envio, Goldsky, Sui data access, Circle, Tether, and chain docs.
-- Decide indexer architecture based on event shape, chain support, latency, hosted/local needs, and operational complexity.
+- Base events: **Custom viem log poller** — uses `getLogs` / `watchContractEvent` with the existing viem client. Zero external services, zero cost, zero signup. Swappable to Envio HyperIndex for production mainnet when needed.
+- Sui events: **Custom TypeScript GraphQL poller** — no commercial indexer supports Sui; query `transactionBlocks` and `events` by package/module type, dedupe by checkpoint + digest.
+- Why NOT Envio for Phase 6: Envio requires an API token (paid after free tier), an external account, and a hosted deployment. For testnet with low event volume, a custom viem poller is identical in behavior, simpler to operate, and free. Envio remains the production upgrade path.
+- Indexer upgrade path: Envio HyperIndex → plug in when approaching mainnet. The `ChainEvent` schema and reconciliation logic stay the same — only the event ingestion layer changes.
+
+Pre-Phase 6 state confirmed (2026-06-02):
+- Both KIAIVault.sol (Base Sepolia) and kiai_vault.move (Sui Testnet) are deployed.
+- Nagoya Basho 2026 market vault created on both chains (createMarket/create_market called).
+- DB has ChainEvent table (0 rows), Trade table (0 rows), UserPosition table (0 rows).
+- 1 OrderIntent is SUBMITTED_TO_CHAIN — waiting for indexer to reconcile it.
+
+Architecture reminder: Base and Sui are payment rails only. The LMSR pool lives in the backend (qYes/qNo in the Market table). Indexer reads chain custody events and reconciles positions — it does NOT read pricing data from chain.
+
+One pool, two payment rails means:
+- A PositionOpened event on Base and a PositionOpened event on Sui both update the SAME market's portfolio state.
+- The reconciliation service must handle events from both chains writing to the same UserPosition rows.
+- Dedup key: (chain, txHash, eventType) — already unique in ChainEvent schema.
 
 Scope:
 
@@ -1290,7 +1305,9 @@ Goal:
 
 Scope:
 
-- Official source snapshot workflow.
+- Written resolution rules for every market: source priority, outcome mapping, close/end condition, and edge cases.
+- Official source snapshot workflow with structured evidence bundles.
+- Optional sports/result API evidence ingestion after API key, licensing, and source-quality review.
 - Resolution proposal.
 - Dispute state.
 - UMA optional backstop if spike proves practical.
@@ -1302,7 +1319,9 @@ Scope:
 
 Acceptance criteria:
 
-- Operator can attach source snapshots.
+- Markets without source policy, edge-case policy, and resolver mode cannot go live.
+- Operator can attach source snapshots with URL, fetched payload, timestamp, screenshot/archive reference where practical, and evidence hash.
+- Sports markets define postponement, cancellation, draw/no-contest, overtime, forfeit, and too-early handling before trading opens.
 - Market can move live -> closed -> resolving -> resolved -> settling -> settled.
 - Ambiguous outcomes do not silently resolve.
 - Refund/cancel path exists for invalid/cancelled markets.
@@ -1315,7 +1334,8 @@ Verification:
 - State-machine tests.
 - Settlement tests.
 - Refund tests.
-- Source snapshot tests.
+- Source snapshot and evidence-bundle tests.
+- Sports edge-case tests.
 - Audit tests.
 - UMA tests only if integrated.
 - Browser/API proof of resolution and portfolio settlement.

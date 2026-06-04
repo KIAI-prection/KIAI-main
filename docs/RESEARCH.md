@@ -372,12 +372,13 @@ The current Sui TypeScript SDK quick start example (sdk.mystenlabs.com) uses `Su
 - Requires `ENVIO_API_TOKEN` from November 2025.
 - V3 HyperSync is up to 2000x faster than RPC. Factory contract support. Auto-generated GraphQL API. Hosted service via `pnpx envio init`.
 
-**Decision for Phase 1 (LOCKED 2026-06-02):**
-- **Base events**: Use **Envio HyperIndex** — production-grade, hosted, HyperSync, reorg handling built-in, TypeScript handlers, single config.yaml for all Base contracts.
-- **Sui events**: Custom TypeScript event poller using **Sui GraphQL RPC** (`/graphql`) — no commercial indexer supports Sui. Query `transactionBlocks` and `events` by package/module/event type. Deduplicate by checkpoint + transaction digest. Write to the same normalized `chain_event` table in Postgres.
-- `ENVIO_API_TOKEN` must be provisioned at Stop 6 (indexer phase). Add to `.env.example` as a required but optional-for-Phase-2 variable.
+**Decision updated 2026-06-03:**
+- **Base events (Phase 6 testnet)**: Custom TypeScript **viem log poller** — uses existing viem client, `getLogs` / `watchContractEvent`. Zero cost, zero external service, zero signup. Same `ChainEvent` schema as Sui poller.
+- **Sui events**: Custom TypeScript event poller using **Sui GraphQL RPC** (`/graphql`) — no commercial indexer supports Sui. Query `transactionBlocks` and `events` by package/module/event type. Deduplicate by checkpoint + transaction digest.
+- **Production upgrade (mainnet)**: Replace Base viem poller with Envio HyperIndex — HyperSync speed, auto reorg handling, hosted. Requires ENVIO_API_TOKEN. The reconciliation layer (ChainEvent → Trade → UserPosition) does NOT change.
+- Rationale for change: Envio requires an API token mandatory since Nov 2025 and has paid tiers. For testnet Phase 6 with low event volume, a viem poller is functionally identical, simpler, and free.
 
-Implementation impact: Envio config and ABI needed for Base (Phase 6). Custom Sui GraphQL poller TypeScript module (Phase 6).
+Implementation impact: Two TypeScript pollers in `lib/indexer/` (Base viem poller + Sui GraphQL poller). Reconciliation service in `lib/server/reconcile.ts`. No external services needed for Phase 6.
 
 ### Decision: UMA Feasibility
 
@@ -434,6 +435,142 @@ Note: `prisma/` directory already exists but contains only the migrations folder
 | Test wallet setup for founder browser QA | Open — founder action required at Stop 2 |
 | Database host choice (local Docker / Supabase / Neon) | Open — founder preference, Stop 1 |
 | ESLint missing from devDependencies | Open — noted in PLAN.md, must be added before lint gate |
+
+---
+
+## Phase 7 Implementation Verification Audit — 2026-06-03 (IST)
+
+**Date**: 2026-06-03
+**Agent**: Cursor (Sonnet 4.6) — reading all RESEARCH.md sources and cross-verifying implementation
+**Scope**: Verify all Phase 1–7 decisions match actual code
+
+### Verified Correct ✅
+
+| Decision | Implementation | Status |
+|---|---|---|
+| Base Sepolia USDC `0x036CbD53...` | In `.env`, `app/api/chains/route.ts`, `contracts/src/KIAIVault.sol` | ✅ Matches Circle official |
+| Sui Testnet USDC `0xa1ec7fc0...::usdc::USDC` | In `.env`, `app/api/chains/route.ts`, `lib/server/sui-execution.ts`, `contracts/sui/sources/kiai_vault.move` | ✅ Matches Circle official |
+| USDT not on Base Sepolia | Not used anywhere in contracts or API | ✅ Correctly excluded |
+| Sui gRPC via `SuiGrpcClient` | `lib/server/sui-execution.ts` imports from `@mysten/sui/grpc` | ✅ Non-deprecated |
+| LMSR backend AMM | `lib/domain/market-service.ts` — `lmsrCost`, `lmsrPrices`, `lmsrQuote`, `lmsrMaxLoss` | ✅ Correct formulas |
+| viem `simulateContract` → `writeContract` → `waitForTransactionReceipt` | `lib/server/base-execution.ts` lines 202–231 | ✅ Correct pattern |
+| KIAIVault.sol uses SafeERC20, ReentrancyGuard, Ownable, Pausable | `contracts/src/KIAIVault.sol` imports | ✅ From OpenZeppelin |
+| kiai_vault.move uses `phantom USDC` type parameter | `contracts/sui/sources/kiai_vault.move` | ✅ Move 2024 edition |
+| Neon + Prisma 7 + `@prisma/adapter-neon` | `lib/server/db.ts`, `prisma.config.ts` | ✅ Correct Prisma 7 pattern |
+| No fake runtime / no mock trading | All APIs return honest states; ChainEvent/Trade/Position only from indexed chain data | ✅ |
+| Wagmi for EVM wallet, dApp Kit for Sui | `lib/providers/wallet-provider.tsx` | ✅ Minimal, no visible redesign |
+| Custom viem poller for Base events | `lib/indexer/base-poller.ts` | ✅ Free, no external service |
+
+### Bug Found and Fixed ✅
+
+**Critical: Wrong Sui GraphQL endpoint**
+
+`sui-poller.ts` was using `${SUI_TESTNET_RPC_URL}/graphql` = `https://fullnode.testnet.sui.io:443/graphql`
+This is **wrong** — the fullnode RPC endpoint is for gRPC, not GraphQL.
+
+Correct Sui testnet GraphQL RPC endpoint (confirmed live 2026-06-03):
+`https://graphql.testnet.sui.io/graphql`
+
+Source: https://docs.sui.io/develop/accessing-data/graphql/query-with-graphql
+Live test confirmed: `{ epoch { referenceGasPrice } }` → returns `1000` ✅
+Event query confirmed: `MarketCreatedEvent` for kiai_vault found → digest `7oJwPTWT...` ✅
+
+**Also fixed: Sui GraphQL Event schema field names**
+Old (wrong): `eventType`, `json`, `transactionBlock { digest }`, `type { repr }`
+Correct: `type`, `contents { json }`, `transaction { digest }`, `sender { address }`
+Confirmed against live schema introspection 2026-06-03.
+
+Fix applied: `lib/indexer/sui-poller.ts` updated. `SUI_TESTNET_GRAPHQL_URL` added to `.env` and `.env.example`.
+
+### Open Items Remaining
+
+| Item | Status |
+|---|---|
+| ESLint in devDependencies | ✅ Fixed 2026-06-03 — `pnpm add -D eslint eslint-config-next` |
+| Sui testnet USDC faucet for trader wallets | Open — users need testnet USDC from https://faucet.sui.io before founder browser QA |
+| Founder browser QA with connected wallets | Open — Phase 7 checkpoint, requires funded trader wallet |
+| UMA OOv2 on Base Sepolia | Open — deferred to Phase 8 |
+| Sui checkpoint-based pagination in poller | Note: `Transaction.checkpoint` field name confirmed in GraphQL schema |
+
+---
+
+## Resolution Oracle Source Audit — 2026-06-04 (IST)
+
+**Scope**: How prediction markets decide real-world winners/losers for sports and other off-chain events, and what KIAI must implement before claiming production-grade resolution.
+
+### Sources Refreshed
+
+| Resource | URL | Finding |
+|---|---|---|
+| Polymarket resolution docs | https://docs.polymarket.com/concepts/resolution.md | Official docs describe predefined resolution rules, resolution source, end date, edge cases, UMA Optimistic Oracle proposal/dispute flow, and redemption after resolution. Direct DNS failed from this shell, so content was fetched through a reader that preserved the official URL source. |
+| Polymarket CTF redeem docs | https://docs.polymarket.com/trading/ctf/redeem.md | Winning tokens redeem after oracle-reported payout vector; losing tokens pay zero. |
+| Polymarket positions docs | https://docs.polymarket.com/concepts/positions-tokens.md | Outcome tokens represent positions; after resolution, winning side redeems for 1.00, losing side for 0.00. |
+| UMA OOV3 quick start | https://docs.uma.xyz/developers/optimistic-oracle-v3/quick-start.md | OOV3 asserts arbitrary off-chain truth, enters a challenge window, settles if undisputed, and escalates if disputed. |
+| UMA OOV3 prediction market tutorial | https://docs.uma.xyz/developers/optimistic-oracle-v3/prediction-market.md | UMA provides a prediction-market pattern with outcomes, reward, required bond, assertions, settlement, and an unresolvable/split outcome. |
+| UMA data asserter tutorial | https://docs.uma.xyz/developers/optimistic-oracle-v3/data-asserter.md | Arbitrary off-chain data can be asserted with bond/liveness and callback settlement. |
+| UMA oracle overview | https://docs.uma.xyz/protocol-overview/how-does-umas-oracle-work.md | UMA is an escalation game: bonded assertion, liveness window, dispute, and DVM backstop. |
+| UMA Polymarket verification guide | https://docs.uma.xyz/verification-guide/yes_or_no.md | Polymarket-style binary questions use ancillary data with explicit question text, resolution keys, unknown/50-50 value, and too-early value. |
+| Chainlink Functions docs | https://docs.chain.link/chainlink-functions.md | Chainlink Functions can fetch APIs and use encrypted secrets, but users remain responsible for source/API quality and provider licensing. |
+| Chainlink Automation docs | https://docs.chain.link/chainlink-automation.md | Automation can run scheduled/triggered on-chain jobs on supported networks, but it is a future operational tool, not a truth source by itself. |
+| Sportradar sports data page | https://sportradar.com/sports-data/ | Commercial sports-data provider for betting, gaming, prediction markets, media, and teams/leagues; useful candidate for live data/evidence ingestion, not a final settlement authority unless licensed and named in market rules. |
+
+### Decision: KIAI Resolution Realness Model
+
+**Decision: KIAI must implement a resolution pipeline, not a single score API call.**
+
+For a sports market like "Team A beats Team B", the winner is decided by the market's written resolution rules. The implementation must store and enforce:
+
+1. **Market question**: exact claim being traded, e.g. "Will Team A beat Team B in the scheduled match on YYYY-MM-DD?"
+2. **Outcome mapping**: which stored outcome slug maps to each possible final result.
+3. **Primary source**: official league/federation/event result URL or API.
+4. **Secondary source**: fallback official or high-quality data source if primary is unavailable.
+5. **API evidence feed**: optional paid or public sports data API used to prefill evidence and monitor results, never silently final by itself.
+6. **Edge-case rules**: postponement, cancellation, abandonment, overtime, forfeits, draws, no-contest, changed venue, tournament format changes, unknown/50-50, and too-early resolution.
+7. **Evidence snapshot**: fetched source URLs, normalized result payloads, timestamps, screenshots or archived copies where practical, operator id, and hash of the evidence bundle.
+8. **Proposal/dispute/finalization**: operator or oracle assertion proposes the winning outcome; a dispute window must pass before final settlement.
+9. **On-chain settlement**: only after finalization does KIAI call Base/Sui resolve functions and open claims/settlement.
+
+### Architecture Choice
+
+**Phase 8 baseline**: operator-reviewed official source snapshot plus structured evidence bundle.
+
+**Phase 8 optional upgrade**: UMA Optimistic Oracle on Base if the spike proves:
+
+- supported network/address for the chosen UMA version,
+- supported bond currency/collateral,
+- required bond/final fee cost,
+- liveness period,
+- dispute operations,
+- callback/finalization path into KIAI contracts,
+- how Sui settlement mirrors the finalized Base/UMA outcome.
+
+**Later automation options**:
+
+- Sports data providers such as Sportradar or SportsDataIO can power live score monitoring and evidence prefill, but require API keys, licensing review, and per-sport coverage checks.
+- Chainlink Functions can fetch API data for EVM contracts and protect API secrets, but it introduces LINK subscription cost, supported-network constraints, and source-quality responsibility.
+- Chainlink Automation can trigger scheduled checks/finalization on supported EVM networks, but it does not decide truth.
+
+### Product Rule
+
+Every KIAI market must show the user the resolution source and edge-case rules before trading. A market without a valid source policy, edge-case policy, and resolver mode must not go live.
+
+### Implementation Impact
+
+- Add first-class resolver concepts in Phase 8: ResolutionSource, ResolutionRule, EvidenceSnapshot, OracleAssertion, and Dispute.
+- Extend the admin/operator workflow so operators cannot propose an outcome without attaching a structured evidence bundle.
+- For sports markets, build a per-sport source adapter only after the exact league/source is chosen. Example: sumo uses Japan Sumo Association/NHK source policy; Premier League uses Premier League official result source; F1 uses Formula 1 official results.
+- Treat paid sports API keys as operational secrets. Do not request them in chat; document required environment variables and validate missing-key behavior.
+- Keep UMA optional until the Phase 8 spike closes cost, collateral, network, and dispute-operation questions.
+
+### Open Items
+
+| Item | Status |
+|---|---|
+| Exact source adapter for first sports market | Open — choose first market and official result source |
+| Paid sports data provider | Open — licensing/API-key decision required before integration |
+| UMA version/network/collateral for Base Sepolia | Open — Phase 8 spike |
+| Sui oracle mirroring design | Open — if UMA is Base-only, KIAI backend must mirror final outcome to Sui with audit evidence |
+| Evidence archiving method | Open — decide screenshot/archive/hash storage path |
 
 ---
 

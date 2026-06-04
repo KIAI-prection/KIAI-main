@@ -1,10 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { MarketCard } from "@/components/market-card";
-import { mockMarkets } from "@/lib/mock-data";
+import { getPublicMarkets } from "@/lib/adapters/markets";
 
 export default async function MarketsPage() {
   const t = await getTranslations("nav");
   const tCommon = await getTranslations("common");
+  const markets = await getPublicMarkets();
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 lg:px-6">
@@ -35,9 +36,9 @@ export default async function MarketsPage() {
       </div>
 
       {/* Markets Grid */}
-      {mockMarkets.length > 0 ? (
+      {markets.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {mockMarkets.map((market) => (
+          {markets.map((market) => (
             <MarketCard key={market.id} market={market} />
           ))}
         </div>

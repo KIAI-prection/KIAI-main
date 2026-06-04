@@ -1,8 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { MarketCard } from "@/components/market-card";
 import { TrendingHero } from "@/components/trending-hero";
-import { getTrendingMarkets, getMarketsByCategory } from "@/lib/mock-data";
+import {
+  getTrendingMarkets,
+  getMarketsByCategory,
+} from "@/lib/adapters/markets";
+import type { UIMarket } from "@/lib/domain/market-service";
 import { Link } from "@/i18n/navigation";
+
+function asMarketList(value: unknown): UIMarket[] {
+  return Array.isArray(value) ? value : [];
+}
 
 export async function generateMetadata({
   params,
@@ -21,9 +29,23 @@ export default async function HomePage() {
   const t = await getTranslations("home");
   const tCategories = await getTranslations("categories");
   const tCommon = await getTranslations("common");
-  const trendingMarkets = getTrendingMarkets();
-  const sportsMarkets = getMarketsByCategory("sports");
-  const politicsMarkets = getMarketsByCategory("politics");
+
+  let trendingMarkets: UIMarket[] = [];
+  let sportsMarkets: UIMarket[] = [];
+  let politicsMarkets: UIMarket[] = [];
+
+  try {
+    const [trending, sports, politics] = await Promise.all([
+      getTrendingMarkets(),
+      getMarketsByCategory("sports"),
+      getMarketsByCategory("politics"),
+    ]);
+    trendingMarkets = asMarketList(trending);
+    sportsMarkets = asMarketList(sports);
+    politicsMarkets = asMarketList(politics);
+  } catch (error) {
+    console.error("[HomePage] Failed to load markets:", error);
+  }
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 lg:px-6">

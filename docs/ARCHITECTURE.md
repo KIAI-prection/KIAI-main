@@ -63,13 +63,15 @@ shares_acquired = cost(q_new) - cost(q_old) for a given USDC amount
 
 These are computed in `lib/domain/market-service.ts`.
 
-## Indexer — Envio HyperIndex (Base) + Custom Sui GraphQL Poller (Locked 2026-06-02)
+## Indexer — Custom viem Log Poller (Base) + Custom Sui GraphQL Poller (Updated 2026-06-03)
 
-**Base events**: Use **Envio HyperIndex** — production-grade hosted indexer, HyperSync for up to 2000x speed vs RPC, auto-reorg handling, TypeScript handlers, single `config.yaml` for multi-contract setup, GraphQL API auto-generated.
+**Base events**: Custom TypeScript viem log poller — uses `getLogs` / `watchContractEvent` with the existing viem public client. Zero external services, zero cost, zero API tokens. Works for testnet Phase 6. Upgrade to Envio HyperIndex for production mainnet (same `ChainEvent` schema, just swap the ingestion layer).
 
-**Sui events**: Custom TypeScript event poller using Sui GraphQL RPC — no commercial EVM indexer supports Sui. The Sui GraphQL RPC (`/graphql`) allows querying transaction blocks and events by package/module/event type. JSON-RPC is deprecated (migration deadline July 2026); all new Sui indexing uses GraphQL or gRPC.
+**Sui events**: Custom TypeScript GraphQL poller — no commercial indexer supports Sui. Queries Sui GraphQL RPC for `transactionBlocks` and `events` by package/module/event type. Deduplicates by checkpoint + transaction digest. JSON-RPC is deprecated (migration deadline July 2026).
 
-Both write to the normalized `chain_event` table in Postgres, feeding the reconciliation pipeline.
+Both write to the normalized `ChainEvent` table in Postgres, feeding the reconciliation pipeline.
+
+**Production upgrade path:** Envio HyperIndex (Base) when approaching mainnet — HyperSync speed, auto-reorg handling, hosted service. Requires ENVIO_API_TOKEN. The reconciliation layer is unchanged.
 
 ## System Diagram
 
@@ -481,7 +483,7 @@ The indexer is the source of portfolio reconciliation. UI-visible positions must
 
 ### Resolver Service
 
-Owns official source snapshots, UMA proposal/dispute/finalization state, and resolution audit trail.
+Owns written resolution rules, source adapters, evidence snapshots, optional API evidence ingestion, UMA proposal/dispute/finalization state, and resolution audit trail.
 
 ## Contract Direction
 
@@ -540,13 +542,18 @@ Base backend execution requirements:
 
 ## Resolution Model
 
+Resolution decides which outcome is real after an off-chain event concludes. It is separate from live market pricing and separate from portfolio reconciliation.
+
 Resolution source priority:
 
-1. Official public source snapshot.
-2. Operator-reviewed source snapshot.
-3. Official feed, once paid/provider integrations are available.
-4. UMA Optimistic Oracle backstop, only after technical spike confirms practical cost and collateral requirements.
-5. Emergency cancellation/refund path.
+1. Written market rule: exact question, outcome mapping, end condition, and edge cases.
+2. Official public source snapshot: league/federation/event/government/source named before trading opens.
+3. Operator-reviewed evidence bundle: URL, fetched payload, timestamp, screenshot/archive reference where practical, operator id, and evidence hash.
+4. Paid or public result API evidence, once provider licensing/API-key/source-quality checks are complete. API data can prefill evidence, but cannot silently finalize a market by itself.
+5. UMA Optimistic Oracle backstop, only after technical spike confirms practical network, cost, collateral, bond, liveness, dispute, and callback requirements.
+6. Emergency cancellation/refund path when the market is invalid, unresolvable, cancelled, or outside its written rules.
+
+For sports, this means the app does not simply ask "who won?" at runtime. Each market must define how draws, postponements, cancellations, forfeits, no-contests, overtime, and too-early resolution are handled before trading opens. The resolver service then proposes the outcome from evidence and waits through the configured dispute path before Base/Sui settlement is finalized.
 
 User-visible states:
 

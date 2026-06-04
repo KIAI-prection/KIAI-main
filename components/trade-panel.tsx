@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { BarChart3, ChevronDown } from "lucide-react";
+import { BarChart3, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { Market, Contestant } from "@/lib/mock-data";
+import { useKIAIWallet } from "@/lib/hooks/use-kiai-wallet";
+import type { UIMarket, UIContestant } from "@/lib/domain/market-service";
 
 interface TradePanelProps {
-  market: Market;
-  selectedContestant: Contestant | null;
+  market: UIMarket;
+  selectedContestant: UIContestant | null;
   locale: string;
+}
+
+interface QuoteResult {
+  id: string;
+  pricePerShare: number;
+  sharesOut: number;
+  totalCostUsd: number;
+  yesProbAfter: number;
+  noProbAfter: number;
+  expiresAt: string;
 }
 
 export function TradePanel({ market, selectedContestant, locale }: TradePanelProps) {
@@ -30,12 +41,55 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
   const [currency, setCurrency] = useState<"jpy" | "usd">(
     locale === "ja" ? "jpy" : "usd"
   );
+  // API-backed quote state
+  const [quote, setQuote] = useState<QuoteResult | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+
+  // Wallet state
+  const { chain, walletAddress, isConnected } = useKIAIWallet("BASE");
 
   const contestant = selectedContestant || market.contestants[0];
-  const price = position === "yes" ? contestant?.priceYes : contestant?.priceNo;
   const numAmount = parseFloat(amount) || 0;
-  const contracts = price ? Math.floor((numAmount / price) * 100) : 0;
-  const estimatedReturn = contracts * 1; // Each contract pays $1 if correct
+
+  // LMSR quote from API (replaces static price math)
+  const fetchQuote = useCallback(async () => {
+    if (!contestant?.id || numAmount <= 0 || !chain) return;
+
+    setQuoteLoading(true);
+    try {
+      const res = await fetch("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          marketId: market.id,
+          outcomeId: contestant.id,
+          chain,
+          side: position,
+          amountUsd: numAmount,
+          walletAddress: walletAddress ?? undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.quote) setQuote(data.quote);
+    } catch {
+      // Quote failure is non-fatal — fall back to static price display
+    } finally {
+      setQuoteLoading(false);
+    }
+  }, [market.id, contestant?.id, chain, position, numAmount, walletAddress]);
+
+  // Debounce quote fetch 600ms after amount/position changes
+  useEffect(() => {
+    if (numAmount <= 0) { setQuote(null); return; }
+    const timer = setTimeout(fetchQuote, 600);
+    return () => clearTimeout(timer);
+  }, [fetchQuote, numAmount, position]);
+
+  // Use LMSR quote if available, fallback to static contestant price
+  const price = position === "yes" ? contestant?.priceYes : contestant?.priceNo;
+  const sharesOut = quote?.sharesOut ?? (price ? Math.floor((numAmount / price) * 100) : 0);
+  const estimatedReturn = sharesOut * 1;
   const profit = estimatedReturn - numAmount;
 
   const formatCurrency = (value: number) => {
@@ -218,6 +272,12 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
         </div>
       </div>
 
+      {/* Order status message */}
+      {orderError && (
+        <div className="mx-4 mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {orderError}
+        </div>
+      )}
       {/* Submit Button */}
       <div className="p-4 pt-0">
         <Button
@@ -227,9 +287,37 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
               ? "bg-yes text-white hover:bg-yes/90"
               : "bg-no text-white hover:bg-no/90"
           )}
-          disabled={!amount || numAmount <= 0}
+          disabled={
+            !amount ||
+            numAmount <= 0 ||
+            quoteLoading
+          }
+          onClick={async () => {
+            if (!isConnected || !walletAddress) {
+              setOrderError("Connect your wallet to trade.");
+              return;
+            }
+            if (!quote) {
+              setOrderError("Request a quote first by entering an amount.");
+              return;
+            }
+
+            setOrderError(null);
+            setOrderError(
+              "Real wallet transaction signing is not wired yet, so no order was submitted."
+            );
+          }}
         >
-          {t("submit")}
+          {quoteLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Pricing...
+            </span>
+          ) : !isConnected ? (
+            "Connect Wallet to Trade"
+          ) : (
+            t("submit")
+          )}
         </Button>
       </div>
     </Card>

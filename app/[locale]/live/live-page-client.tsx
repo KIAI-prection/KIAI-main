@@ -5,14 +5,20 @@ import { useTranslations } from "next-intl";
 import { CategorySidebar } from "@/components/category-sidebar";
 import { MarketCard } from "@/components/market-card";
 import { LiveBadge } from "@/components/live-badge";
-import { getLiveMarkets } from "@/lib/mock-data";
+import type { UIMarket } from "@/lib/domain/market-service";
 
-export function LivePageClient() {
+interface LivePageClientProps {
+  initialMarkets: UIMarket[];
+}
+
+export function LivePageClient({ initialMarkets }: LivePageClientProps) {
   const t = useTranslations("nav");
   const tMarket = useTranslations("market");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const liveMarkets = getLiveMarkets();
+  const liveMarkets = selectedCategory
+    ? initialMarkets.filter((m) => m.category === selectedCategory)
+    : initialMarkets;
 
   return (
     <div className="flex min-h-[calc(100vh-112px)]">
