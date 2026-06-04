@@ -71,6 +71,60 @@ enum ResolutionStatus {
   FAILED
 }
 
+enum SettlementJobStatus {
+  PENDING
+  SUBMITTED
+  CONFIRMED
+  FAILED
+  BLOCKED
+  RETRYING
+}
+
+enum SettlementAction {
+  RESOLVE
+  CANCEL
+  UNSUPPORTED
+}
+
+enum EvidenceSnapshotKind {
+  OFFICIAL_SOURCE
+  API_PAYLOAD
+  SCREENSHOT
+  ARCHIVE
+  OPERATOR_NOTE
+}
+
+enum EvidenceSnapshotStatus {
+  CAPTURED
+  VERIFIED
+  REJECTED
+}
+
+enum ResolutionDisputeStatus {
+  OPEN
+  ADJUDICATING
+  RESOLVED
+  REJECTED
+}
+
+enum ResolutionDisputeReason {
+  SOURCE_DISAGREEMENT
+  ORACLE_CHALLENGE
+  EVIDENCE_TAMPERING
+  MANUAL_SAFETY
+  TOO_EARLY
+  OTHER
+}
+
+enum OracleAssertionStatus {
+  NOT_REQUESTED
+  REQUESTED
+  PROPOSED
+  DISPUTED
+  SETTLED
+  FAILED
+}
+
 enum CollateralAsset {
   USDC_BASE_SEPOLIA
   USDC_SUI_TESTNET
@@ -94,6 +148,8 @@ model Market {
   lifecycle       MarketLifecycle @default(DRAFT)
   statusInfoEn    String?
   statusInfoJa    String?
+  // Pre-trade resolution contract: source priority, edge cases, payout/refund policy.
+  resolutionPolicy Json?
 
   // Pool state — LMSR backend AMM
   // b = liquidity parameter; higher b = more liquidity, more house exposure
@@ -115,6 +171,10 @@ model Market {
   chainDeployments ChainDeployment[]
   compliancePolicy CompliancePolicy?
   resolution      Resolution?
+  settlementJobs  SettlementJob[]
+  evidenceSnapshots EvidenceSnapshot[]
+  resolutionDisputes ResolutionDispute[]
+  oracleAssertions OracleAssertion[]
   orderIntents    OrderIntent[]
 }
 
@@ -224,6 +284,132 @@ model Resolution {
   updatedAt       DateTime         @updatedAt
 
   market          Market           @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  settlementJobs  SettlementJob[]
+  evidenceSnapshots EvidenceSnapshot[]
+  disputes        ResolutionDispute[]
+  oracleAssertions OracleAssertion[]
+}
+
+// ---------------------------------------------------------------------------
+// EvidenceSnapshot — archived source/API/screenshot/operator evidence
+// ---------------------------------------------------------------------------
+
+model EvidenceSnapshot {
+  id              String                 @id @default(cuid())
+  marketId        String
+  resolutionId    String?
+  kind            EvidenceSnapshotKind
+  status          EvidenceSnapshotStatus @default(CAPTURED)
+  sourceName      String
+  sourceUrl       String?
+  archiveUrl      String?
+  screenshotUrl   String?
+  payloadHash     String
+  rawPayload      Json?
+  observedOutcome String?
+  providerEventStatus String?
+  sourceCertainty String?
+  capturedBy      String
+  capturedAt      DateTime               @default(now())
+  notes           String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  market          Market                 @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  resolution      Resolution?            @relation(fields: [resolutionId], references: [id], onDelete: SetNull)
+
+  @@index([marketId])
+  @@index([resolutionId])
+  @@index([payloadHash])
+}
+
+// ---------------------------------------------------------------------------
+// ResolutionDispute — explicit challenge/manual-review state
+// ---------------------------------------------------------------------------
+
+model ResolutionDispute {
+  id             String                  @id @default(cuid())
+  marketId       String
+  resolutionId   String
+  reason         ResolutionDisputeReason
+  status         ResolutionDisputeStatus @default(OPEN)
+  openedBy       String
+  openedAt       DateTime                @default(now())
+  summary        String
+  evidence       Json?
+  resolutionNote String?
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  market         Market                  @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  resolution     Resolution              @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+
+  @@index([marketId])
+  @@index([resolutionId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// OracleAssertion — optional external assertion/dispute metadata
+// ---------------------------------------------------------------------------
+
+model OracleAssertion {
+  id              String                @id @default(cuid())
+  marketId        String
+  resolutionId    String
+  provider        String
+  status          OracleAssertionStatus @default(REQUESTED)
+  assertionId     String?
+  requestId       String?
+  bond            String?
+  livenessSeconds Int?
+  assertedOutcome String?
+  payload         Json?
+  createdBy       String
+  settledAt       DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  market          Market                @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  resolution      Resolution            @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+
+  @@index([marketId])
+  @@index([resolutionId])
+  @@index([provider])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// SettlementJob — durable per-chain finalization work
+// ---------------------------------------------------------------------------
+
+model SettlementJob {
+  id                    String              @id @default(cuid())
+  marketId              String
+  resolutionId          String
+  chain                 Chain
+  action                SettlementAction
+  status                SettlementJobStatus @default(PENDING)
+  // Exact finalized settlement contract produced by the resolution policy.
+  settlementInstruction Json
+  payoutMode            String
+  finalOutcome          String?
+  txHash                String?
+  attempts              Int                 @default(0)
+  lastError             String?
+  submittedAt           DateTime?
+  confirmedAt           DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  market                Market              @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  resolution            Resolution          @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+
+  @@unique([resolutionId, chain])
+  @@index([marketId])
+  @@index([status])
 }
 
 // ---------------------------------------------------------------------------

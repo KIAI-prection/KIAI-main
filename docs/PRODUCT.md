@@ -168,6 +168,39 @@ Culture and specials:
 - Clear failure handling for rejected quotes, failed transactions, reverted EVM calls, failed Sui effects, indexer lag, compliance blocks, and resolution disputes.
 - Manual browser wallet testing by the founder for Sui and Base flows before acceptance.
 
+### Base/Sui/DeFi Product Boundary — Refreshed 2026-06-04
+
+Base and Sui are user-selectable payment/custody rails for the same KIAI market, not separate markets with separate odds. The user should experience this as: choose a market, choose the supported rail, confirm a real wallet transaction, then wait for chain and reconciliation evidence before final portfolio state appears.
+
+Current product defaults:
+
+- Base testnet trading uses Circle USDC on Base Sepolia only.
+- Sui testnet trading uses Circle USDC on Sui Testnet only.
+- USDT is not offered on Base or Sui until current official Tether/Base/Sui sources prove support.
+- The product does not route through Sui DeFi protocols, DEXs, bridges, lending markets, or yield products in Phase 1.
+- Smart wallets, account abstraction, sponsored gas, zkLogin, and embedded wallet flows remain later onboarding improvements. They must not replace the standard wallet paths until those paths pass manual browser QA.
+
+User-visible truth rules:
+
+- A rejected wallet signature is not a trade.
+- A pending transaction is not a final position.
+- A successful wallet broadcast is not enough; the product waits for receipt/effects and reconciliation.
+- If an indexer lags, the product shows pending/reconciling state instead of fake portfolio success.
+- If collateral, gas, chain, or market config is unsupported, the product shows the specific block reason.
+
+Product edge cases that every new market or rail must handle:
+
+| Case | Product result |
+|---|---|
+| Wrong chain selected | Block or ask for chain switch before submit. |
+| Insufficient gas | Block with gas-specific reason and keep trade retryable. |
+| Insufficient USDC | Block with collateral-specific reason. |
+| Wallet rejected | No trade; show retry affordance. |
+| Base tx pending/replaced/cancelled/reverted | Preserve exact chain state and avoid final portfolio credit. |
+| Sui failed transaction/effects | Preserve digest/effects evidence and avoid final portfolio credit. |
+| Indexer lag | Show pending/reconciling until chain observation catches up. |
+| Unsupported USDT or DeFi route | Hide or block the option until source-gated support exists. |
+
 ### Required After Core Execution Path
 
 - Auth and wallet-linking backend flows.
@@ -223,11 +256,13 @@ Never collapse wallet, market, quote, collateral, balance, policy, and chain fai
 1. Operator drafts market.
 2. Operator defines outcomes and close time.
 3. Operator attaches official source or source policy.
-4. Operator defines oracle fallback.
-5. Operator sets region and KYC policy.
-6. Operator chooses Sui/Base deployment plan.
-7. Market passes validation.
-8. Market publishes or returns to draft.
+4. Operator defines edge-case policy: draw/tie, postponement, cancellation, no-contest, forfeit, abandoned event, and too-early proposal behavior.
+5. Operator defines payout/refund policy: winner-take-all, 50/50 split, fractional/dead-heat, full refund, partial refund, or manual adjudication.
+6. Operator defines oracle fallback.
+7. Operator sets region and KYC policy.
+8. Operator chooses Sui/Base deployment plan.
+9. Market passes validation.
+10. Market publishes or returns to draft.
 
 ## Market Quality Bar
 
@@ -239,12 +274,25 @@ A market cannot publish without:
 - resolution criteria,
 - official source or source policy,
 - oracle/dispute policy,
+- edge-case policy,
+- payout/refund policy,
+- source certainty policy: whether provisional data can update UI only or can finalize settlement,
 - compliance policy,
 - chain deployment state,
 - fee policy,
 - cancellation/refund behavior.
 
 For v1, official public-source snapshots are the required resolution baseline. Paid official feeds such as Sportradar, JSA, NPB, and similar sources are later integrations. UMA may be used as a dispute/backstop path only after a technical spike confirms the specific testnet deployment, required bonds/final fees, supported collateral, and operational cost.
+
+Resolution product rule:
+
+- The market page must show the resolution source, edge-case policy, and payout/refund policy before trading.
+- A sports market must not imply that one side simply "wins" and the other "loses" unless the rule also states what happens on draws, postponements, cancellations, forfeits, abandoned matches, and official result changes.
+- Provisional/live API data may be shown as status evidence, but final settlement should wait for the named official source or oracle-final state unless the market rule explicitly says otherwise.
+- If no outcome is assignable, KIAI should use the market's predeclared unresolvable policy: `split_50_50`, `void_refund`, or `manual_adjudication`.
+- Current deployed Base/Sui vaults can execute winner-take-all settlement and full-refund cancellation. Split, fractional, manual, partial-refund, and no-winning-share cases must show a blocked/manual settlement state until product approves a contract upgrade or operational remediation path.
+- The first source-adapter path is Nagoya/sumo through an operator-reviewed Nihon Sumo Kyokai official-source observation. The adapter can prefill evidence and suggested proposal shape, but the operator still reviews and submits the proposal before the dispute window.
+- New markets must store a pre-trade resolution policy before they can move toward review/deployment. After close, evidence snapshots, dispute records, and oracle assertion metadata preserve why the final outcome was accepted or challenged.
 
 ## UX Direction
 
@@ -294,3 +342,4 @@ Avoid:
 2. Dual-chain liquidity meaning: separate per-chain liquidity under one product market, or a genuinely unified cross-chain book/router. This needs a founder/architecture conversation before Phase 4.
 3. Exact Sui USDsui testnet asset and Base Sepolia USDC/USDT contracts must be verified before contract implementation.
 4. UMA backstop scope depends on a technical spike proving practical testnet usage, collateral/bond requirements, and operational cost.
+5. First sport/source adapter: choose one launch sport and one official source first. Do not build a generic sports resolver before proving one complete sport-specific rule and evidence path.

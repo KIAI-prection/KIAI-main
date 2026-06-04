@@ -195,6 +195,13 @@ export async function PATCH(
       );
     }
 
+    if (message.includes("valid resolution policy")) {
+      return NextResponse.json(
+        { error: "invalid_state", message },
+        { status: 422 }
+      );
+    }
+
     return NextResponse.json(
       { error: "internal_error", message },
       { status: 500 }

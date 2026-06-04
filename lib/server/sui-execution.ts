@@ -235,6 +235,53 @@ export async function resolveMarketOnSui(
 }
 
 // ---------------------------------------------------------------------------
+// Operator: cancel market on Sui for full-refund settlement
+// ---------------------------------------------------------------------------
+
+export async function cancelMarketOnSui(
+  marketObjectId: string
+): Promise<SuiExecutionResult> {
+  try {
+    const keypair = getOperatorKeypair();
+    const client = getSuiClient();
+
+    const tx = new Transaction();
+
+    tx.moveCall({
+      target: SUI_PACKAGE_ID + "::kiai_vault::cancel_market",
+      typeArguments: [USDC_TYPE],
+      arguments: [
+        tx.object(SUI_OPERATOR_CAP_ID),
+        tx.object(marketObjectId),
+      ],
+    });
+
+    const result = await client.signAndExecuteTransaction({
+      transaction: tx,
+      include: { effects: true },
+      signer: keypair,
+    });
+
+    if (result.$kind === "FailedTransaction") {
+      return {
+        ok: false,
+        error: {
+          kind: "effects_failed",
+          digest: result.FailedTransaction.digest,
+          error: String(result.FailedTransaction.status.error ?? "Cancel failed"),
+        },
+      };
+    }
+
+    const digest = result.Transaction.digest;
+    await client.core.waitForTransaction({ digest });
+    return { ok: true, digest };
+  } catch (err) {
+    return mapSuiError(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Build deposit PTB (for user wallet via dApp Kit)
 // ---------------------------------------------------------------------------
 

@@ -9,8 +9,24 @@
  * market record, not separate per-chain markets.
  */
 
-import { MarketLifecycle, Chain, CollateralAsset, Prisma } from "@prisma/client";
+import {
+  MarketLifecycle,
+  Chain,
+  CollateralAsset,
+  EvidenceSnapshotKind,
+  EvidenceSnapshotStatus,
+  Prisma,
+} from "@prisma/client";
 import { db } from "@/lib/server/db";
+import { toPrismaJson } from "@/lib/server/json";
+import {
+  buildSettlementInstruction,
+  SettlementInstructionRequest,
+  SettlementInstructionRequestSchema,
+} from "@/lib/domain/resolution-policy";
+import { ResolutionEvidenceSchema } from "@/lib/domain/resolution-evidence";
+import { createSnapshotHash } from "@/lib/domain/resolution-governance";
+import { assertMarketResolutionPolicyReady } from "@/lib/domain/market-resolution-policy";
 
 // ---------------------------------------------------------------------------
 // Allowed lifecycle transitions
@@ -82,6 +98,7 @@ export async function createMarket(
     lmsrB = 100,
     blockedRegions = [],
     createChainDeployments = true,
+    sourcePolicyEn: _sourcePolicyEn,
     ...marketData
   } = input;
 
@@ -189,10 +206,20 @@ export async function transitionLifecycle(
 ) {
   const market = await db.market.findUnique({
     where: { id: marketId },
-    select: { lifecycle: true, slug: true },
+    select: { lifecycle: true, slug: true, resolutionPolicy: true },
   });
 
   if (!market) throw new Error(`Market ${marketId} not found.`);
+  if (["REVIEWED", "DEPLOY_PENDING", "LIVE"].includes(to)) {
+    try {
+      assertMarketResolutionPolicyReady(market.resolutionPolicy);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "invalid policy";
+      throw new Error(
+        "Market must have a valid resolution policy before " + to + ". " + message
+      );
+    }
+  }
 
   if (!canTransition(market.lifecycle, to)) {
     throw new Error(
@@ -336,15 +363,55 @@ export async function unpauseMarket(
 // Resolution
 // ---------------------------------------------------------------------------
 
+type ResolutionOutcomeCandidate = {
+  slug: string;
+  name: string;
+};
+
+function normalizeResolutionOutcome(
+  input: string,
+  outcomes: ResolutionOutcomeCandidate[]
+): string {
+  const trimmed = input.trim();
+  const lower = trimmed.toLowerCase();
+  const match = outcomes.find(
+    (outcome) =>
+      outcome.slug === trimmed ||
+      outcome.slug.toLowerCase() === lower ||
+      outcome.name.toLowerCase() === lower
+  );
+
+  if (!match) {
+    const valid = outcomes
+      .map((outcome) => `${outcome.slug} (${outcome.name})`)
+      .join(", ");
+    throw new Error(
+      `Invalid resolution outcome "${input}". Valid outcomes: ${valid}`
+    );
+  }
+
+  return match.slug;
+}
+
+export interface ProposeResolutionInput {
+  proposedOutcome?: string | null;
+  proposedSettlement?: SettlementInstructionRequest;
+}
+
 export async function proposeResolution(
   marketId: string,
-  proposedOutcome: string,
+  input: string | ProposeResolutionInput,
   sourceSnapshot: Record<string, unknown>,
   operatorId: string
 ) {
+  const proposal =
+    typeof input === "string" ? { proposedOutcome: input } : input;
   const market = await db.market.findUnique({
     where: { id: marketId },
-    select: { lifecycle: true },
+    select: {
+      lifecycle: true,
+      outcomes: { select: { slug: true, name: true } },
+    },
   });
 
   if (!market) throw new Error(`Market ${marketId} not found.`);
@@ -354,7 +421,24 @@ export async function proposeResolution(
     );
   }
 
-  const resolutionSnapshot = sourceSnapshot as Prisma.InputJsonObject;
+  const evidence = ResolutionEvidenceSchema.parse(sourceSnapshot);
+  const proposedSettlement = proposal.proposedSettlement
+    ? SettlementInstructionRequestSchema.parse(proposal.proposedSettlement)
+    : undefined;
+  const normalizedOutcome = proposal.proposedOutcome
+    ? normalizeResolutionOutcome(proposal.proposedOutcome, market.outcomes)
+    : null;
+
+  if (!normalizedOutcome && !isNonOutcomeResolutionProposal(proposedSettlement)) {
+    throw new Error(
+      "Resolution proposal requires proposedOutcome unless proposing a non-outcome settlement such as full refund, split, fractional, or manual review."
+    );
+  }
+
+  const resolutionSnapshot = toPrismaJson(
+    evidence
+  ) as Prisma.InputJsonObject;
+  const disputeDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
   await db.$transaction(async (tx) => {
     // Close market first if needed
@@ -365,22 +449,51 @@ export async function proposeResolution(
       });
     }
 
-    await tx.resolution.upsert({
+    const resolutionRecord = await tx.resolution.upsert({
       where: { marketId },
       update: {
-        proposedOutcome,
+        proposedOutcome: normalizedOutcome,
         sourceSnapshot: resolutionSnapshot,
         proposer: operatorId,
-        status: "PROPOSED",
-        disputeDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48h window
+        status: "DISPUTE_WINDOW",
+        disputeDeadline,
       },
       create: {
         marketId,
-        proposedOutcome,
+        proposedOutcome: normalizedOutcome,
         sourceSnapshot: resolutionSnapshot,
         proposer: operatorId,
-        status: "PROPOSED",
-        disputeDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000),
+        status: "DISPUTE_WINDOW",
+        disputeDeadline,
+      },
+    });
+
+    const primarySource = evidence.sources[0];
+    await tx.evidenceSnapshot.create({
+      data: {
+        marketId,
+        resolutionId: resolutionRecord.id,
+        kind: evidenceSourceTypeToSnapshotKind(primarySource.type),
+        status:
+          evidence.sourceCertainty === "provisional"
+            ? EvidenceSnapshotStatus.CAPTURED
+            : EvidenceSnapshotStatus.VERIFIED,
+        sourceName: primarySource.name,
+        sourceUrl: primarySource.url,
+        payloadHash:
+          evidence.evidenceHash ??
+          evidence.rawPayloadHash ??
+          createSnapshotHash(evidence),
+        rawPayload: resolutionSnapshot,
+        observedOutcome: primarySource.observedOutcome ?? normalizedOutcome ?? undefined,
+        providerEventStatus:
+          primarySource.providerEventStatus ?? evidence.providerEventStatus,
+        sourceCertainty: evidence.sourceCertainty,
+        capturedAt: primarySource.fetchedAt
+          ? new Date(primarySource.fetchedAt)
+          : undefined,
+        capturedBy: operatorId,
+        notes: primarySource.notes,
       },
     });
 
@@ -389,20 +502,56 @@ export async function proposeResolution(
         operatorId,
         action: "resolution_proposed",
         marketId,
-        details: { proposedOutcome, sourceSnapshotKeys: Object.keys(sourceSnapshot) },
+        details: {
+          proposedOutcome: normalizedOutcome,
+          proposedPayoutMode: proposedSettlement?.payoutMode ?? "winner_take_all",
+          proposedRefundPolicy: proposedSettlement?.refundPolicy ?? "none",
+          sourceCertainty: evidence.sourceCertainty,
+          sourceSnapshotKeys: Object.keys(evidence),
+          disputeDeadline: disputeDeadline.toISOString(),
+        },
       },
     });
   });
+
+  return { proposedOutcome: normalizedOutcome, disputeDeadline };
+}
+
+function evidenceSourceTypeToSnapshotKind(
+  type: "official" | "api" | "archive" | "screenshot" | "operator_note"
+) {
+  if (type === "official") return EvidenceSnapshotKind.OFFICIAL_SOURCE;
+  if (type === "api") return EvidenceSnapshotKind.API_PAYLOAD;
+  if (type === "archive") return EvidenceSnapshotKind.ARCHIVE;
+  if (type === "screenshot") return EvidenceSnapshotKind.SCREENSHOT;
+  return EvidenceSnapshotKind.OPERATOR_NOTE;
+}
+
+function isNonOutcomeResolutionProposal(
+  settlement?: SettlementInstructionRequest
+) {
+  if (!settlement) return false;
+  return settlement.payoutMode !== "winner_take_all";
+}
+
+export interface FinalizeResolutionInput {
+  finalOutcome?: string;
+  settlement?: SettlementInstructionRequest;
 }
 
 export async function finalizeResolution(
   marketId: string,
-  finalOutcome: string,
+  input: string | FinalizeResolutionInput,
   operatorId: string
 ) {
+  const finalization =
+    typeof input === "string" ? { finalOutcome: input } : input;
   const market = await db.market.findUnique({
     where: { id: marketId },
-    include: { resolution: true },
+    include: {
+      resolution: true,
+      outcomes: { select: { slug: true, name: true } },
+    },
   });
 
   if (!market) throw new Error(`Market ${marketId} not found.`);
@@ -411,11 +560,55 @@ export async function finalizeResolution(
       `Market must be RESOLVING to finalize. Current: ${market.lifecycle}`
     );
   }
+  if (
+    !market.resolution ||
+    !["DISPUTE_WINDOW", "DISPUTED", "ADJUDICATING"].includes(
+      market.resolution.status
+    )
+  ) {
+    throw new Error("Market must have a proposed resolution before finalization.");
+  }
+
+  const normalizedOutcome = finalization.finalOutcome
+    ? normalizeResolutionOutcome(finalization.finalOutcome, market.outcomes)
+    : undefined;
+  const allowEarlyFinalize =
+    process.env.KIAI_ALLOW_EARLY_RESOLUTION_FINALIZE === "true";
+  if (
+    market.resolution.disputeDeadline &&
+    market.resolution.disputeDeadline > new Date() &&
+    !allowEarlyFinalize
+  ) {
+    throw new Error(
+      `Resolution dispute window is still open until ${market.resolution.disputeDeadline.toISOString()}.`
+    );
+  }
+
+  const evidence = ResolutionEvidenceSchema.parse(
+    market.resolution.sourceSnapshot ?? {}
+  );
+  const settlementInstruction = buildSettlementInstruction({
+    resolutionId: market.resolution.id,
+    marketId,
+    outcomes: market.outcomes,
+    finalOutcome: normalizedOutcome,
+    evidence,
+    settlement: finalization.settlement,
+    finalizedBy: operatorId,
+  });
+  const finalSourceSnapshot = toPrismaJson({
+    ...evidence,
+    settlementInstruction,
+  }) as Prisma.InputJsonObject;
 
   await db.$transaction(async (tx) => {
     await tx.resolution.update({
       where: { marketId },
-      data: { finalOutcome, status: "FINAL" },
+      data: {
+        finalOutcome: normalizedOutcome ?? null,
+        sourceSnapshot: finalSourceSnapshot,
+        status: "FINAL",
+      },
     });
 
     await tx.market.update({
@@ -428,8 +621,19 @@ export async function finalizeResolution(
         operatorId,
         action: "resolution_finalized",
         marketId,
-        details: { finalOutcome },
+        details: {
+          finalOutcome: normalizedOutcome ?? null,
+          payoutMode: settlementInstruction.payoutMode,
+          refundPolicy: settlementInstruction.refundPolicy,
+          sourceCertainty: settlementInstruction.sourceCertainty,
+          evidenceBundleHash: settlementInstruction.evidenceBundleHash,
+        },
       },
     });
   });
+
+  return {
+    finalOutcome: normalizedOutcome ?? null,
+    settlementInstruction,
+  };
 }

@@ -45,6 +45,8 @@ contracts/broadcast/DeployKIAIVault.s.sol/84532/run-latest.json
 
 **USDC source:** Circle official — https://developers.circle.com/stablecoins/usdc-contract-addresses (verified 2026-06-02)
 
+**Source refresh 2026-06-04:** Circle still lists Base/Base Sepolia USDC. Tether support for Base/Base Sepolia USDT was not confirmed from the official Tether protocols page. Keep Base Sepolia deployment USDC-only until a fresh official source says otherwise.
+
 ---
 
 ## Sui Testnet
@@ -71,6 +73,8 @@ contracts/broadcast/DeployKIAIVault.s.sol/84532/run-latest.json
 **Explorer:** https://suiscan.xyz/testnet/tx/6TmnAtSZFoqTMbXeMsuUayA2arxtvyo33MJmcsg6bPsa
 
 **USDC source:** Circle official Sui Testnet — https://developers.circle.com/stablecoins/usdc-contract-addresses (verified 2026-06-02)
+
+**Source refresh 2026-06-04:** Circle still lists Sui/Sui Testnet USDC. Tether support for Sui/Sui Testnet USDT was not confirmed. Sui settlement remains USDC-only.
 
 **Nagoya Basho 2026 market created on Sui Testnet:**
 
@@ -151,8 +155,28 @@ Markets must be created on-chain via `createMarket(bytes32 marketId)` before use
 | `DEPLOYER_PRIVATE_KEY` | In `.env` — Base Sepolia deployer — never commit |
 | `SUI_OPERATOR_PRIVATE_KEY` | In `.env` — Sui testnet operator — never commit |
 | `OPERATOR_SECRET` | In `.env` — KIAI admin API bearer token |
+| `KIAI_ALLOW_EARLY_RESOLUTION_FINALIZE` | Optional local/test override. Set to `true` only for controlled tests that need to bypass the dispute deadline. Never enable for production-like settlement runs. |
+| `SPORTS_DATA_API_KEY` | Future optional source-adapter secret for licensed sports data. Do not add until provider/licensing decision is recorded in `docs/RESEARCH.md`. |
+| `RESOLUTION_EVIDENCE_ARCHIVE_BUCKET` | Future optional storage target for source snapshots, screenshots, raw API payloads, and evidence bundle hashes. |
 | `BASE_SEPOLIA_RPC_URL` | `https://sepolia.base.org` |
 | `SUI_TESTNET_RPC_URL` | `https://fullnode.testnet.sui.io:443` |
+| `SUI_TESTNET_GRAPHQL_URL` | `https://sui-testnet.mystenlabs.com/graphql` |
+
+Resolution deployment note:
+
+- Base and Sui vaults must consume finalized KIAI settlement instructions only.
+- Do not wire chain settlement directly to sports API payloads, screenshots, or provisional source-adapter results.
+- Resolution finalization must preserve the evidence bundle hash and payout/refund policy used for the chain settlement run.
+- Settlement runs are now represented by per-chain `SettlementJob` records. Operators should prepare/list jobs through `/api/admin/markets/:id/settlement` before running settlement.
+- The deployed Base and Sui vaults currently support only winner-take-all `resolve` and full-refund `cancel`. Split, fractional, manual, partial-refund, and no-winning-share resolution cases must remain blocked/manual until an approved contract or operations path exists.
+
+Base/Sui/DeFi deployment guardrails, refreshed 2026-06-04:
+
+- Re-fetch Base `llms.txt`, Circle USDC addresses, Tether supported protocols, Sui data access, and Sui GraphQL docs before any new deployment or collateral change.
+- Foundry Base deploys should dry-run before broadcast, use keystore or hardware-wallet patterns where possible, preserve broadcast artifacts, and verify on Sepolia Basescan when practical.
+- Base execution health checks must distinguish pending, replaced, cancelled, reverted, and event-missing states.
+- Sui execution health checks must distinguish wallet rejection, failed transaction/effects, digest-not-yet-visible, event-missing, and checkpoint/indexer lag states.
+- DeFi integrations, bridges, DEX routing, lending, yield, and sponsored gas are not deployment requirements for Phase 1 and must not be added without a dedicated source-gated risk spike.
 
 ---
 

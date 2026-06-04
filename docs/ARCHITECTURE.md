@@ -73,6 +73,33 @@ Both write to the normalized `ChainEvent` table in Postgres, feeding the reconci
 
 **Production upgrade path:** Envio HyperIndex (Base) when approaching mainnet — HyperSync speed, auto-reorg handling, hosted service. Requires ENVIO_API_TOKEN. The reconciliation layer is unchanged.
 
+## Base/Sui/DeFi Runtime Boundary — Refreshed 2026-06-04
+
+Base and Sui remain execution/custody rails underneath one KIAI market identity. They are not independent liquidity pools, independent AMMs, or DeFi routing choices.
+
+Runtime rules:
+
+- Base path: quote/order intent -> viem simulation -> wallet write -> transaction receipt -> emitted vault event -> Base indexer observation -> reconciliation -> portfolio finalization.
+- Sui path: quote/order intent -> dApp Kit / Wallet Standard transaction -> failed-transaction/effects check -> digest visibility -> Sui event observation -> reconciliation -> portfolio finalization.
+- Phase 1 Base and Sui testnet collateral remains Circle USDC only. USDT must stay unsupported until Tether/Base/Sui/current authoritative docs confirm rail support.
+- DeFi protocols, bridges, lending markets, DeepBook routing, yield, and liquidity aggregation are out of runtime scope until a dedicated DeFi product/risk spike is approved.
+- Smart Wallet, Base Account, OnchainKit, MiniKit, paymasters, Enoki, zkLogin, and sponsored transactions are UX upgrade candidates only after the normal wallet paths pass browser QA.
+- Chain execution state is never inferred from optimistic UI state. A portfolio position becomes final only after chain receipt/effects and indexer or confirmed chain observation.
+
+Fallback rules:
+
+| Failure | System behavior |
+|---|---|
+| Wallet reject | Keep the order intent retryable; do not create a trade. |
+| Wrong chain | Block or request switch before submit; never broadcast to the wrong rail. |
+| Base reverted receipt | Store receipt/error, mark chain failed, do not reconcile shares. |
+| Base tx replaced/cancelled | Preserve replacement metadata and map to replaced/cancelled status. |
+| Sui FailedTransaction or failed effects | Store digest/effects/error, mark chain failed, do not reconcile shares. |
+| Receipt/effects available but expected event missing | Mark reconciliation blocked and require retry/backfill/operator review. |
+| RPC/indexer lag | Expose indexing_pending; resume from cursor/checkpoint; dedupe before writes. |
+| Unsupported USDT or stale collateral address | Block trading/deploy until source-pack refresh and config validation pass. |
+| DeFi/bridge/swap requested | Defer to separate spike covering custody, slippage, approvals, oracle, liquidity, and compliance risk. |
+
 ## System Diagram
 
 ```text
@@ -96,7 +123,7 @@ Both write to the normalized `ChainEvent` table in Postgres, feeding the reconci
              v                               v
        Sui Settlement Rail             Base Settlement Rail
        kiai_vault.move ✅ deployed     KIAIVault.sol ✅ deployed
-       Wallet Standard / dApp Kit      EVM wallet + CDP path
+       Wallet Standard / dApp Kit      EVM wallet + viem/wagmi
        USDC (Circle official Sui)      USDC (Circle official Base Sepolia)
        — USDT not supported on Sui     — USDT not on Base Sepolia (Tether)
              |                               |
@@ -554,6 +581,82 @@ Resolution source priority:
 6. Emergency cancellation/refund path when the market is invalid, unresolvable, cancelled, or outside its written rules.
 
 For sports, this means the app does not simply ask "who won?" at runtime. Each market must define how draws, postponements, cancellations, forfeits, no-contests, overtime, and too-early resolution are handled before trading opens. The resolver service then proposes the outcome from evidence and waits through the configured dispute path before Base/Sui settlement is finalized.
+
+Current implementation baseline after the 2026-06-04 open-source prediction-market audit:
+
+- Admin resolution proposals require a structured `sourceSnapshot` evidence object with description, at least one source, edge-case notes, resolver mode, optional evidence hash, and optional oracle metadata.
+- `sourceSnapshot` now also supports source certainty, provider event status, raw payload hash, source priority rank, and an optional resolution-rule JSON contract.
+- The first source adapter is `sumo-jsa`: it converts an operator-reviewed Nihon Sumo Kyokai official-source observation into KIAI resolution evidence for tournament-winner markets.
+- Proposed and final outcomes are normalized to existing market outcome slugs before storage. A typo or unknown outcome cannot be used for resolution.
+- Non-outcome proposals such as official cancellation/refund can enter the dispute window without assigning a fake winning outcome, as long as the proposed settlement mode is not `winner_take_all`.
+- A proposal puts the resolution into `DISPUTE_WINDOW` and writes a 48-hour deadline. Finalization is blocked until that deadline unless `KIAI_ALLOW_EARLY_RESOLUTION_FINALIZE=true` is set for controlled local testing.
+- Finalization builds and stores a settlement instruction with payout mode, payout vector, refund policy, source certainty, rule version, evidence bundle hash, and finalized-by metadata.
+- Settlement jobs are now durable per-chain records keyed by resolution and chain. The runner consumes only the finalized settlement instruction and records action, status, attempts, last error, and tx hash/digest.
+- Market-level `resolutionPolicy` is now the pre-trade rule contract. Future transitions toward `REVIEWED`, `DEPLOY_PENDING`, or `LIVE` require a valid policy with source priority, edge cases, resolver mode, payout mode, refund policy, and source-certainty policy.
+- Evidence snapshots, resolution disputes, and optional oracle assertions are now first-class records. Resolution proposals also archive their primary source evidence automatically.
+- Current deployed Base and Sui vaults execute only winner-take-all resolution and full-refund cancellation. Split, fractional, manual, partial-refund, and no-winning-share cases are blocked with explicit job errors until the contracts or an approved manual remediation path support them.
+- This is still the operator-reviewed official-source baseline. It is not a full UMA integration and does not replace the Phase 8 need for source adapters, refunds/claims UX, evidence archiving, and oracle/dispute tables.
+
+### Resolution Semantics
+
+The resolver must output a **settlement instruction**, not just a winning label.
+
+Required settlement instruction fields:
+
+- `resolutionId`
+- `marketId`
+- `ruleVersion`
+- `sourceCertainty`: `provisional`, `official_confirmed`, `oracle_final`, or `manual_adjudicated`
+- `status`: `awaiting_evidence`, `proposed`, `dispute_window`, `disputed`, `adjudicating`, `final`, `cancelled`, `failed`
+- `payoutMode`: `winner_take_all`, `split_50_50`, `fractional`, `void_refund`, or `manual`
+- `payoutVector`: outcome slug -> decimal payout factor, with all factors validated against the selected payout mode
+- `refundPolicy`: `none`, `full_refund`, `partial_refund`, or `manual_review`
+- `evidenceBundleHash`
+- `finalizedAt`
+- `finalizedBy`: operator id, oracle assertion id, or adjudication id
+
+Examples:
+
+| Scenario | `payoutMode` | `payoutVector` | `refundPolicy` |
+|---|---|---|---|
+| Team A wins binary market | `winner_take_all` | `{ "team-a": 1, "team-b": 0 }` | `none` |
+| Unknown/50-50 binary market | `split_50_50` | `{ "yes": 0.5, "no": 0.5 }` | `none` |
+| Cancelled event with refund rule | `void_refund` | `{ "yes": 0, "no": 0 }` | `full_refund` |
+| Dead heat/shared placing | `fractional` | Market-specific fractional factors | `none` or `partial_refund` |
+
+Settlement contracts should not interpret sports rules, API payloads, screenshots, or oracle debate context. They should receive only the final settlement instruction or a compact hash/reference to the already-finalized instruction. The backend resolver remains the single source of resolution truth for both Base and Sui rails.
+
+### Settlement Job Execution
+
+Settlement execution is per rail:
+
+1. Operator finalizes resolution after the dispute window.
+2. The admin settlement endpoint prepares one `SettlementJob` per deployed chain rail.
+3. The job planner maps the settlement instruction to a chain action:
+   - `winner_take_all` with a final outcome -> `RESOLVE`
+   - `void_refund` with `full_refund` -> `CANCEL`
+   - split, fractional, manual, partial refund, or missing winner -> `BLOCKED`
+4. A runnable job calculates total winning YES shares for that rail from reconciled `UserPosition` rows.
+5. Base uses `resolveMarket` or `cancelMarket`; Sui uses `resolve_market` or `cancel_market`.
+6. Success stores the Base tx hash or Sui digest on the job. Failure stores the error without changing the finalized outcome.
+
+Important contract limitation: both deployed vaults require positive total winning shares for `resolve`. If nobody on a rail holds the winning outcome, the runner blocks the job instead of sending a transaction that would revert. Product must decide whether that case becomes a refund/manual remediation or a contract upgrade.
+
+### Source Adapter States
+
+Every source adapter must normalize provider/event states into KIAI states:
+
+| Adapter observation | KIAI state | Settlement allowed? |
+|---|---|---|
+| Not started, live, suspended | `awaiting_evidence` | No |
+| Delayed or postponed | `delayed` | No, unless rules declare expiry/refund |
+| Ended but not confirmed | `provisional_result` | No by default |
+| Officially confirmed/closed | `official_confirmed` | Yes, after proposal/dispute rules |
+| Cancelled, abandoned, no result assignable | `manual_review` or `cancelled` | Only after rule/refund decision |
+| Provider/API error | `evidence_unavailable` | No |
+| Provider result conflicts with official source | `disputed` | No |
+
+The JSA/sumo adapter intentionally does not auto-settle from live page content. It returns a structured evidence payload and suggested proposal body for operator review. Direct shell fetches of the JSA page may hit site URL guards; Exa/browser fetch can read indexed content, so production evidence archiving still needs a durable snapshot mechanism rather than relying on ad hoc scraping.
 
 User-visible states:
 

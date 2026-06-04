@@ -311,6 +311,38 @@ How to use:
 - Sui data access docs are required before choosing Sui indexing. Avoid new long-lived JSON-RPC dependency unless deliberately scoped and documented.
 - Portfolio truth must come from receipts, effects, events, indexers, or confirmed chain observation. It must not come from optimistic UI state.
 
+### Base/Sui/DeFi Source Refresh Addendum — 2026-06-04
+
+Canonical section: docs/RESEARCH.md, Base/Sui/DeFi Source Refresh — 2026-06-04.
+
+Refreshed with Firecrawl, Context7, Exa/direct fetch, and the local browse skill preamble:
+
+- Base docs index, deployment, finality, troubleshooting, and data-indexer pages.
+- Sui data access, Sui GraphQL reference, Sui SDK / dApp Kit, Sui DeFi, and Launch on Sui.
+- Circle USDC, Tether supported protocols, Ponder, Envio, Goldsky, Foundry, OpenZeppelin, viem, and wagmi.
+
+Updated planning decisions:
+
+- Base and Sui stay payment/custody rails for one backend market pool.
+- Base Phase 1 collateral is Circle USDC on Base Sepolia only. USDT remains unsupported.
+- Sui Phase 1 collateral is Circle USDC on Sui Testnet only. USDT remains unsupported.
+- DeFi resources are ecosystem/risk context, not Phase 1 runtime dependencies.
+- Normal EVM wallet + viem/wagmi and normal Sui Wallet Standard / dApp Kit paths come before smart wallets, account abstraction, paymasters, sponsored gas, Enoki, or zkLogin.
+- Base final portfolio state requires simulation, wallet broadcast, receipt, emitted event or confirmed chain observation, and reconciliation.
+- Sui final portfolio state requires transaction execution, failed-transaction/effects check, digest visibility, emitted event or confirmed chain observation, and reconciliation.
+
+Required next-phase edge-case coverage:
+
+| Phase | Cases that must be planned/tested |
+|---|---|
+| Phase 6 | Base block cursor, Sui checkpoint/digest cursor, duplicate event, event missing after successful receipt/effects, RPC timeout, rate limit, restart/backfill, reorg/log gap handling. |
+| Phase 7 | Wallet reject, wrong chain, insufficient gas, insufficient USDC, stale quote, pending/replaced/cancelled Base tx, failed Sui effects, slow indexer, event missing, unsupported USDT. |
+| Phase 8 | Settlement instruction retry per rail, failed Base settlement, failed Sui settlement, one rail settled while the other retries, source disagreement, refund/cancel payout vectors. |
+| Phase 9 | New market source-pack refresh, source policy completeness, rail availability, collateral support, market-specific resolution edge cases. |
+| Phase 10 | Source-refresh runbook, RPC/indexer health monitors, deployment artifact audit, settlement retry runbook, incident response for stale collateral or chain data. |
+
+Do not add DeFi protocol execution unless a separate DeFi spike covers custody, approvals, slippage, bridge risk, oracle/liquidity dependencies, compliance implications, user disclosure, and rollback.
+
 ### Application Framework Source Pack
 
 This pack is required whenever future agents touch the Next.js app, API routes, React wiring, validation, auth, database, styling, or tests. Chain docs are not enough for app implementation.
@@ -1196,6 +1228,7 @@ Source gate (updated 2026-06-03):
 - Sui events: **Custom TypeScript GraphQL poller** — no commercial indexer supports Sui; query `transactionBlocks` and `events` by package/module type, dedupe by checkpoint + digest.
 - Why NOT Envio for Phase 6: Envio requires an API token (paid after free tier), an external account, and a hosted deployment. For testnet with low event volume, a custom viem poller is identical in behavior, simpler to operate, and free. Envio remains the production upgrade path.
 - Indexer upgrade path: Envio HyperIndex → plug in when approaching mainnet. The `ChainEvent` schema and reconciliation logic stay the same — only the event ingestion layer changes.
+- Source refresh 2026-06-04 confirms this testnet plan: Base docs list many hosted indexers, but custom viem polling remains simpler for Phase 6; Sui official docs require GraphQL/gRPC instead of new long-lived JSON-RPC dependencies.
 
 Pre-Phase 6 state confirmed (2026-06-02):
 - Both KIAIVault.sol (Base Sepolia) and kiai_vault.move (Sui Testnet) are deployed.
@@ -1251,6 +1284,8 @@ Acceptance criteria:
 - Duplicate events do not duplicate positions.
 - Lag is visible as indexing_pending.
 - Replays are possible from last indexed block/checkpoint.
+- Base replays use block/tx/log identity and tolerate RPC timeout, rate limits, replacement, and event-missing cases.
+- Sui replays use checkpoint + digest + event identity and tolerate digest visibility lag, failed effects, and GraphQL/gRPC retry.
 - Failed reconciliation is visible and retryable.
 - Portfolio does not trust optimistic frontend state.
 
@@ -1260,6 +1295,8 @@ Verification:
 - Replay tests.
 - Duplicate-event tests.
 - Lag/error tests.
+- Event-missing-after-success tests for both Base receipts and Sui effects.
+- Cursor restart/backfill tests for Base blocks and Sui checkpoints.
 - Real Base trade reconciles.
 - Real Sui trade reconciles.
 
@@ -1284,6 +1321,7 @@ Acceptance criteria:
 - Existing pages render against API-backed state.
 - Trade ticket requests real quotes and creates durable order intents.
 - Wallet reject, quote expiry, insufficient gas, unsupported collateral, paused market, and indexer lag are visible as honest statuses.
+- Wrong chain, insufficient USDC, Base tx pending/replaced/cancelled/reverted, Sui failed effects, event missing, and unsupported USDT are visible as honest statuses.
 - No fake success states remain.
 - No visible UI redesign is introduced.
 - Manual chain choice works.
@@ -1295,6 +1333,7 @@ Verification:
 - API integration tests.
 - Browser smoke on desktop and mobile.
 - Wallet-connected manual QA on Base and Sui after contract paths are ready.
+- Manual QA must include at least one blocked/failure path per rail: reject signature, wrong network, insufficient gas or collateral, slow indexing, and failed/reverted execution where feasible.
 - Visual comparison against frozen UI where practical.
 
 ## Phase 8: Resolution, Settlement, Refunds, And Compliance State
@@ -1306,6 +1345,8 @@ Goal:
 Scope:
 
 - Written resolution rules for every market: source priority, outcome mapping, close/end condition, and edge cases.
+- Resolution policy model: payout mode, payout vector, refund policy, source certainty, unresolvable policy, and rule version.
+- Source adapter normalization for the first chosen sport/source pair.
 - Official source snapshot workflow with structured evidence bundles.
 - Optional sports/result API evidence ingestion after API key, licensing, and source-quality review.
 - Resolution proposal.
@@ -1320,8 +1361,17 @@ Scope:
 Acceptance criteria:
 
 - Markets without source policy, edge-case policy, and resolver mode cannot go live.
+- Markets without payout/refund policy and unresolvable policy cannot go live.
+- Market rules define whether provisional/live source data is UI-only or settlement-eligible.
 - Operator can attach source snapshots with URL, fetched payload, timestamp, screenshot/archive reference where practical, and evidence hash.
+- Resolution proposal API rejects empty/unstructured evidence snapshots and stores a structured source bundle in `Resolution.sourceSnapshot`.
+- Resolution proposal/finalization normalizes to existing outcome slugs and rejects unknown outcome names.
+- Resolution finalization cannot bypass the dispute deadline except with the explicit local test override `KIAI_ALLOW_EARLY_RESOLUTION_FINALIZE=true`.
+- Final resolution stores a settlement instruction with `sourceCertainty`, `payoutMode`, `payoutVector`, `refundPolicy`, `evidenceBundleHash`, and `ruleVersion`.
+- Settlement jobs consume the settlement instruction, not raw API payloads or human-readable market copy.
+- Base and Sui settlement jobs are per-rail idempotent and retryable; one rail failing must not change the finalized market outcome or block operator visibility into the other rail.
 - Sports markets define postponement, cancellation, draw/no-contest, overtime, forfeit, and too-early handling before trading opens.
+- Sports source adapters distinguish not started, live, suspended, delayed, postponed, interrupted, ended-unconfirmed, official-confirmed, cancelled, abandoned, and provider-error states.
 - Market can move live -> closed -> resolving -> resolved -> settling -> settled.
 - Ambiguous outcomes do not silently resolve.
 - Refund/cancel path exists for invalid/cancelled markets.
@@ -1334,13 +1384,73 @@ Verification:
 - State-machine tests.
 - Settlement tests.
 - Refund tests.
+- Payout-vector tests: winner-take-all, 50/50 split, fractional/dead-heat, full refund, partial refund.
 - Source snapshot and evidence-bundle tests.
 - Sports edge-case tests.
+- Source-certainty tests: provisional evidence cannot finalize settlement by default; official-confirmed/oracle-final can.
+- Source-disagreement tests: official source wins over API prefill, or market enters disputed/manual review if the official source is unavailable/conflicted.
 - Audit tests.
 - UMA tests only if integrated.
 - Browser/API proof of resolution and portfolio settlement.
 
+Implementation tasks:
+
+1. Add `ResolutionRule` data model or JSON contract for rule version, source priority, edge cases, payout/refund policy, and unresolvable policy.
+2. Extend resolution evidence schema to include `sourceCertainty`, provider event status, raw payload hash, and source priority rank.
+3. Add settlement instruction builder that validates final outcome against market outcomes and produces a payout vector.
+4. Add first source adapter for one selected sport/source pair before building a generic sports abstraction.
+5. Add operator UI/API gates so markets cannot publish without source, edge-case, payout/refund, and unresolvable policies.
+6. Add dispute/adjudication state transitions for source disagreement, oracle challenge, evidence tampering concern, and manual safety override.
+7. Add settlement jobs for Base and Sui that are idempotent, retryable, and read only finalized settlement instructions.
+8. Add archive/hash path for official source snapshots and API payloads.
+9. Add per-rail settlement failure states for Base receipt revert, Sui failed effects, chain RPC outage, and event/indexer lag.
+10. Keep DeFi protocol state out of settlement. Settlement consumes KIAI payout vectors only, not DEX, bridge, lending, or liquidity protocol output.
+
+Autoplan review notes, 2026-06-04:
+
+- CEO/product: the user-facing promise is not "we use an oracle"; it is "you can see exactly how this market resolves before trading." Product copy and operator tooling must expose edge cases and payout/refund behavior.
+- Engineering: the resolver must produce a settlement instruction with payout vector. This is the clean boundary between ambiguous off-chain evidence and deterministic chain settlement.
+- DX/operator: Phase 8 needs a copy-paste-complete operator example for the first sport/source adapter, including sample evidence payload, expected proposal body, and expected settlement instruction.
+- Deferred: a generic all-sports resolver is too broad. Build one complete vertical source adapter first, then generalize from real friction.
+
+Phase 8 implementation progress, 2026-06-04:
+
+- Implemented strict resolution evidence extensions for source certainty, provider event status, raw payload hash, source priority rank, and optional resolution rule JSON.
+- Implemented `lib/domain/resolution-policy.ts` as the settlement-instruction contract: source certainty validation, payout modes, refund policy, payout vectors, rule version, and deterministic evidence bundle hash.
+- Updated admin finalization to store a settlement instruction inside `Resolution.sourceSnapshot` and return it from the resolution API.
+- Winner-take-all remains backward compatible with existing `finalOutcome` calls.
+- Split, void/refund, fractional, and manual payout modes are represented in the settlement instruction.
+- Added durable per-rail `SettlementJob` records with status/action/attempt/error/tx hash fields and a unique `resolutionId + chain` idempotency key.
+- Added `GET/POST /api/admin/markets/:id/settlement` for operator settlement visibility, job preparation, full-market runs, and explicit job retry.
+- Added Base `cancelMarketOnChain` and Sui `cancelMarketOnSui` helpers for full-refund settlement.
+- Added a settlement runner that consumes only finalized settlement instructions. Current deployed vaults can execute `winner_take_all` as resolve and `void_refund + full_refund` as cancel/refund. `split_50_50`, `fractional`, `manual`, partial refund, and no-winning-share winner-take-all cases are blocked with explicit job errors until contracts or off-chain remediation support them.
+- Verified this slice with `pnpm exec prisma validate`, `pnpm exec prisma generate`, `pnpm exec tsx tests/resolution-policy.test.ts`, `pnpm exec tsx tests/settlement-plan.test.ts`, `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm build`.
+- Added the first launch source adapter: `lib/domain/source-adapters/sumo-jsa.ts` for Nihon Sumo Kyokai/JSA official tournament-winner evidence.
+- Added `POST /api/admin/markets/:id/source-adapters/sumo-jsa` to produce a reviewed `sourceSnapshot` and suggested resolution proposal for Nagoya/sumo markets.
+- Updated resolution proposal flow so non-outcome settlement proposals such as `void_refund` can enter the dispute window without inventing a fake winning outcome.
+- Verified adapter behavior with `pnpm exec tsx tests/sumo-jsa-source-adapter.test.ts` and `pnpm exec tsc --noEmit`.
+- Added market-level `resolutionPolicy` JSON and `PUT/GET /api/admin/markets/:id/resolution-policy` so markets can store source priority, edge-case rules, resolver mode, payout mode, refund policy, and source-certainty policy before trading.
+- Added lifecycle gating: future transitions toward `REVIEWED`, `DEPLOY_PENDING`, or `LIVE` require a valid market resolution policy.
+- Added first-class Phase 8 governance records and APIs:
+  - `EvidenceSnapshot` plus `GET/POST /api/admin/markets/:id/evidence`
+  - `ResolutionDispute` plus `GET/POST /api/admin/markets/:id/disputes` and `PATCH /api/admin/markets/:id/disputes/:disputeId`
+  - `OracleAssertion` plus `GET/POST /api/admin/markets/:id/oracle-assertions`
+- Resolution proposal now automatically archives its primary source evidence into `EvidenceSnapshot`.
+- Added governance tests for market policy, evidence snapshot hashing, dispute inputs, and oracle assertion metadata.
+
+Next Phase 8 slice:
+
+1. Add operator UI panels for resolution policy, evidence snapshots, disputes, oracle assertions, and settlement jobs.
+2. Decide whether to upgrade vault contracts for split/fractional/manual payouts or keep those cases as manual/off-chain remediation in Phase 1.
+3. Add production evidence storage integration for screenshots/archive URLs instead of only storing hashes/URLs/raw payload JSON.
+
 ## Phase 9: Market Catalogue Rollout
+
+Source gate addendum, refreshed 2026-06-04:
+
+- Every new market must confirm rail availability, collateral support, and source/resolution policy before publish.
+- Market catalogue expansion must not add USDT, DeFi routing, bridges, yield, or liquidity protocols by category implication. Those require separate source-gated spikes.
+- For each first market in a category, include a product/engineering edge-case checklist: cancellation, postponement, draw/no-contest, ambiguous source data, delayed official result, chain rail outage, unsupported collateral, and settlement retry.
 
 Goal:
 
@@ -1414,6 +1524,8 @@ Scope:
 - Metrics for quote/order/tx/indexer/settlement.
 - Operator runbooks.
 - Deployment runbooks.
+- Source-refresh runbook for Base, Sui, Circle, Tether, and indexer docs before beta changes.
+- Rail-specific incident response for Base pending/replaced/cancelled/reverted transactions and Sui failed effects/digest/indexer lag.
 - Incident response.
 - Manual founder QA checklist.
 - Beta readiness report.
@@ -1425,8 +1537,10 @@ Acceptance criteria:
 - Contract admin/operator permissions are reviewed.
 - Indexer lag and reconciliation failures are observable.
 - Failed trades and blocked trades are visible in logs/audit.
+- Unsupported collateral, stale token address, RPC outage, event-missing, and settlement retry states are observable.
 - Deployment scripts are repeatable.
 - Runbooks cover Base deploy, Sui deploy, indexer restart, market pause, failed settlement, and rollback.
+- Runbooks explicitly say DeFi protocols, bridges, swaps, yield, and sponsored-gas paths are not emergency fallbacks unless separately approved and source-gated.
 - Founder manual QA checklist is complete.
 
 Verification:
@@ -1575,13 +1689,14 @@ Sui path:
 Resolution path:
 
 1. Operator closes market.
-2. Operator records official source snapshot.
-3. Operator proposes outcome.
-4. Market enters resolving.
-5. Outcome finalizes or dispute state is visible.
-6. Settlement job runs.
-7. User position becomes claimable or settled.
-8. Failed settlement remains visible and retryable.
+2. Operator records structured official source snapshot: rule summary, source URLs/API payload references, fetched timestamps, provider event status, source certainty, edge cases, resolver mode, optional evidence hash, and optional oracle metadata.
+3. Operator proposes outcome; backend canonicalizes it to an existing outcome slug.
+4. Resolver builds a draft settlement instruction with payout mode, payout vector, refund policy, evidence hash, and rule version.
+5. Market enters resolving and resolution enters dispute window.
+6. Outcome finalizes only after the dispute window, or dispute/manual adjudication state is visible.
+7. Settlement job runs from the finalized settlement instruction.
+8. User position becomes claimable or settled.
+9. Failed settlement remains visible and retryable.
 
 ## Documentation Update Rules
 
@@ -1634,6 +1749,42 @@ A future implementation phase is not done until:
 - docs are updated for any changed decisions.
 - Diff is reviewed for unrelated changes.
 - Remaining risks are reported honestly.
+
+## GSTACK REVIEW REPORT
+
+Autoplan run: 2026-06-04 IST
+
+Scope reviewed:
+
+- Product resolution promise for sports and other off-chain events.
+- Engineering boundary between resolver evidence, payout semantics, and Base/Sui settlement.
+- OSS prediction-market references from `/Users/sourabhkapure/Desktop/prediction_market researhc`.
+- Live/current references: Polymarket resolution/dispute docs, UMA OOv2/OOv3 docs, Sportradar event/settlement docs, Chainlink Functions/Automation docs, and Reality.eth/Kleros docs.
+
+Decisions made:
+
+| Decision | Classification | Rationale |
+|---|---|---|
+| Keep KIAI v1 baseline as operator-reviewed official source snapshots, not mandatory UMA. | Product/engineering | UMA remains useful, but cost, collateral, deployment, bond, and Sui mirroring questions are still open. |
+| Add payout-vector planning before settlement jobs. | Engineering | Winner-only strings cannot represent 50/50, refund, half-void, dead heat, or fractional outcomes safely. |
+| Require source certainty before finalization. | Product/engineering | Sports feeds distinguish provisional/live results from official confirmed results; KIAI settlement should not finalize from provisional data by default. |
+| Build one complete sport/source adapter first. | Scope | A generic sports resolver would hide too many sport-specific edge cases. |
+| Treat Chainlink Functions as API ingestion, not truth. | Engineering | Functions can fetch and transform data, but source quality/licensing/finality remain KIAI responsibilities. |
+| Keep Reality.eth/Kleros as later research. | Scope | It supports subjective oracle arbitration, but likely adds slower dispute operations than Phase 8 needs. |
+
+Cross-phase themes:
+
+- Product: users must know how a market resolves before trading, including cancellation/refund and unresolvable policies.
+- Engineering: settlement must consume a finalized settlement instruction, not raw API payloads, screenshots, or market copy.
+- Operations: official source snapshots, payload hashes, and audit events are not optional; they are how KIAI defends a final outcome.
+
+Deferred items:
+
+- Exact first sports/source adapter.
+- Paid sports API provider and licensing decision.
+- UMA version/network/collateral/bond spike.
+- Evidence archive storage.
+- Dedicated `ResolutionRule`, `ResolutionSource`, `OracleAssertion`, `Dispute`, and settlement-instruction persistence model.
 
 ## Final Critical Reminder
 

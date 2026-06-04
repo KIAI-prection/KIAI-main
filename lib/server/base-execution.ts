@@ -46,8 +46,8 @@ export const KIAI_VAULT_ABI = parseAbi([
   "function claimWinnings(bytes32 marketId) external",
   "function refund(bytes32 marketId) external",
   // Read
-  "function getMarket(bytes32 marketId) external view returns (tuple(uint8 status, bytes32 winningOutcomeId, uint256 totalCollateral, uint256 totalWinningShares))",
-  "function getPosition(bytes32 marketId, address user) external view returns (tuple(uint256 usdcDeposited, uint256 shares, bytes32 outcomeId, bool claimed))",
+  "function getMarket(bytes32 marketId) external view returns ((uint8 status, bytes32 winningOutcomeId, uint256 totalCollateral, uint256 totalWinningShares))",
+  "function getPosition(bytes32 marketId, address user) external view returns ((uint256 usdcDeposited, uint256 shares, bytes32 outcomeId, bool claimed))",
   "function claimableAmount(bytes32 marketId, address user) external view returns (uint256)",
   "function marketIdBytes(string calldata marketId) external pure returns (bytes32)",
   "function outcomeIdBytes(string calldata outcomeSlug) external pure returns (bytes32)",
@@ -283,6 +283,58 @@ export async function resolveMarketOnChain(
       return {
         ok: false,
         error: { kind: "chain_failed", txHash, message: "Resolve reverted" },
+      };
+    }
+
+    return {
+      ok: true,
+      txHash,
+      blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed,
+    };
+  } catch (err) {
+    return mapError(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Operator write: cancel market on-chain for full-refund settlement
+// ---------------------------------------------------------------------------
+
+export async function cancelMarketOnChain(
+  vaultAddress: Address,
+  marketId: string
+): Promise<ExecutionResult> {
+  const marketIdBytes32 = marketIdToBytes32(marketId);
+  const client = getPublicClient();
+
+  try {
+    const walletClient = getOperatorWalletClient();
+
+    await client.simulateContract({
+      address: vaultAddress,
+      abi: KIAI_VAULT_ABI,
+      functionName: "cancelMarket",
+      args: [marketIdBytes32],
+      account: walletClient.account,
+    });
+
+    const txHash = await walletClient.writeContract({
+      address: vaultAddress,
+      abi: KIAI_VAULT_ABI,
+      functionName: "cancelMarket",
+      args: [marketIdBytes32],
+    });
+
+    const receipt = await client.waitForTransactionReceipt({
+      hash: txHash,
+      timeout: 60_000,
+    });
+
+    if (receipt.status !== "success") {
+      return {
+        ok: false,
+        error: { kind: "chain_failed", txHash, message: "Cancel reverted" },
       };
     }
 
