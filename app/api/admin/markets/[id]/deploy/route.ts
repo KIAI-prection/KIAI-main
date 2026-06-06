@@ -17,10 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Chain } from "@prisma/client";
 import { requireOperator, operatorId } from "@/lib/server/operator-auth";
-import {
-  markDeployPending,
-  recordDeployResult,
-} from "@/lib/domain/operator-service";
+import { markDeployPending } from "@/lib/domain/operator-service";
 
 const DeploySchema = z.object({
   chain: z.enum(["BASE", "SUI"]),

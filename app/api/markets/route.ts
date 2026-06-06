@@ -7,16 +7,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/server/db";
 import { marketToUI } from "@/lib/domain/market-service";
+import { DEMO_MARKET_SLUGS } from "@/lib/market-catalogue/demo-markets";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const category = searchParams.get("category");
+    const previewCatalogue = searchParams.get("preview") === "catalogue";
     const lifecycles = ["LIVE", "REVIEWED", "DEPLOY_PENDING"];
 
     const markets = await db.market.findMany({
       where: {
-        lifecycle: { in: lifecycles as never[] },
+        ...(previewCatalogue
+          ? { slug: { in: DEMO_MARKET_SLUGS } }
+          : { lifecycle: { in: lifecycles as never[] } }),
         ...(category ? { category } : {}),
       },
       include: {

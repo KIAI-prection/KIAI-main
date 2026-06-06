@@ -179,7 +179,7 @@ async function reconcilePositionOpened(
   });
 
   // Create Trade record
-  const trade = await db.trade.create({
+  await db.trade.create({
     data: {
       orderIntentId: matchingOrder?.id ?? "orphan", // handle events without matching order
       chain,

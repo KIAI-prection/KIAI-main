@@ -1437,12 +1437,26 @@ Phase 8 implementation progress, 2026-06-04:
   - `OracleAssertion` plus `GET/POST /api/admin/markets/:id/oracle-assertions`
 - Resolution proposal now automatically archives its primary source evidence into `EvidenceSnapshot`.
 - Added governance tests for market policy, evidence snapshot hashing, dispute inputs, and oracle assertion metadata.
+- Added first browser-testable operator console at `/en/operator` for Phase 8 governance operations:
+  - session-local bearer-token entry for existing admin APIs without exposing `OPERATOR_SECRET` in rendered HTML
+  - admin market selection and lifecycle transition controls
+  - resolution policy JSON editor using the market's real outcome slugs
+  - evidence snapshot creation, Sumo/JSA adapter prefill, resolution proposal submission, oracle assertion recording, dispute open/resolve, and settlement job prepare/run controls
+  - governance record panels for evidence snapshots, disputes, oracle assertions, and settlement jobs
+- Added `lib/operator-console/default-payloads.ts` and `tests/operator-console-defaults.test.ts` so operator JSON drafts are deterministic and test-covered.
+- Added local authenticated evidence archiving for raw source/API payloads:
+  - `lib/server/evidence-archive.ts` writes JSON artifacts under `RESOLUTION_EVIDENCE_ARCHIVE_DIR` or `.kiai/evidence-archive`
+  - `createEvidenceSnapshot` automatically archives raw payloads when no explicit archive URL is supplied
+  - `GET /api/admin/evidence-archive/:hash` returns the archived artifact behind the existing operator bearer-token gate
+  - `tests/evidence-archive.test.ts` covers write/read, URL/path generation, and hash normalization
+- Added operator-console archive inspection so evidence rows with internal archive URLs can fetch and preview the exact archived JSON artifact during manual review.
+- Phase 1 settlement decision: do not upgrade Base/Sui vault contracts for split/fractional/manual payouts before founder acceptance. Keep those settlement instructions represented in backend policy, but block chain execution with explicit settlement-job errors and handle only approved manual/off-chain remediation if such a market is created.
 
-Next Phase 8 slice:
+Phase 8 closure boundary:
 
-1. Add operator UI panels for resolution policy, evidence snapshots, disputes, oracle assertions, and settlement jobs.
-2. Decide whether to upgrade vault contracts for split/fractional/manual payouts or keep those cases as manual/off-chain remediation in Phase 1.
-3. Add production evidence storage integration for screenshots/archive URLs instead of only storing hashes/URLs/raw payload JSON.
+1. Automated and operator-browser smoke can cover the implemented governance path.
+2. Founder/operator manual acceptance is still required before claiming Phase 8 product acceptance.
+3. Hosted object storage/screenshot capture, production role-based admin auth, audit search, safer form widgets, UMA collateral/network spike, and broader payout contract upgrades move to the Phase 9/production-hardening boundary unless the founder explicitly pulls one back into Phase 8.
 
 ## Phase 9: Market Catalogue Rollout
 
@@ -1508,6 +1522,45 @@ Verification:
 - Browser smoke across categories.
 - Resolution-source checklist for each demo market.
 
+Implementation status, updated 2026-06-05:
+
+- Code-complete baseline:
+  - `lib/market-catalogue/demo-markets.ts` is now the Phase 9 source of truth for the eight demo markets.
+  - `lib/market-catalogue/policies.ts` builds validated `resolutionPolicy` contracts for every demo market before seed/runtime use.
+  - `prisma/seed.ts` idempotently syncs all eight markets, outcomes, compliance records, pending resolution records, and Base/Sui chain deployment plans.
+  - Seed now archives superseded old demo slugs only when they are safe drafts/reviewed markets with no order intents; it writes an `OperatorAction` audit record instead of deleting history.
+  - Admin-created markets that submit `sourcePolicyEn` now persist an initial `resolutionPolicy` instead of discarding the source-policy input.
+  - `/api/markets?preview=catalogue` and `/en/markets?preview=catalogue` provide catalogue QA visibility over the eight Phase 9 demo markets without changing normal public market visibility or making draft markets tradable.
+- Current first demo set in code:
+  1. `nagoya-basho-2026-winner`
+  2. `yokozuna-terunofuji-nagoya-2026-record`
+  3. `summer-koshien-2026-winner`
+  4. `npb-central-league-pennant-2026`
+  5. `japan-house-councillors-2028-coalition-majority`
+  6. `epl-2026-27-opening-weekend-featured-match`
+  7. `f1-abu-dhabi-gp-2026-winner`
+  8. `akutagawa-prize-2026-second-half`
+- Manual/founder gate still required before beta/public claims:
+  - Review each market's English/Japanese copy and outcome set.
+  - Review each written source policy and edge-case rule.
+  - Decide which draft markets should transition to `REVIEWED`, then deploy rails before any live trading claim.
+  - Politics remains testnet/development-only until compliance/legal approval.
+- Verification run 2026-06-05:
+  - `pnpm exec tsx tests/market-catalogue.test.ts`
+  - `pnpm exec tsx tests/market-resolution-policy.test.ts`
+  - `pnpm exec tsx tests/resolution-policy.test.ts`
+  - `pnpm exec tsx tests/settlement-plan.test.ts`
+  - `pnpm exec tsx tests/sumo-jsa-source-adapter.test.ts`
+  - `pnpm exec tsx tests/resolution-governance.test.ts`
+  - `pnpm exec tsx tests/operator-console-defaults.test.ts`
+  - `pnpm exec tsx tests/operator-console-archive-records.test.ts`
+  - `pnpm exec tsx tests/evidence-archive.test.ts`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm lint`
+  - `pnpm build`
+  - `pnpm exec tsx prisma/seed.ts`
+  - Direct database verification confirmed 8/8 demo markets policy-ready with Base and Sui deployment plans, and confirmed the three superseded demo slugs are `ARCHIVED`.
+
 ## Phase 10: Security, Observability, Operations, And Beta Readiness
 
 Goal:
@@ -1551,6 +1604,34 @@ Verification:
 - Real-chain smoke tests pass.
 - Browser wallet QA evidence recorded.
 - Beta readiness report names remaining risks.
+
+Implementation status, updated 2026-06-05:
+
+- Code-complete Phase 10 baseline:
+  - `GET /api/admin/ops/status` is the read-only operator status endpoint for controlled beta readiness.
+  - `lib/server/ops-status.ts` checks required env presence without exposing secret values, source-refresh freshness, market lifecycle counts, chain deployment state, indexer backlog, failed/blocked orders, settlement job problems, open disputes, oracle assertion status, and recent operator audit actions.
+  - `/en/operator` can fetch and display the ops status JSON through the existing bearer-token workflow.
+  - `.env.example` and `docs/DEPLOYMENTS.md` document `KIAI_SOURCE_REFRESHED_AT` for source-pack refresh tracking.
+  - `docs/RUNBOOKS.md` now covers beta readiness, Base deploy, Sui deploy, indexer restart, market pause, failed settlement, incident response, and explicit non-fallbacks.
+  - `docs/BETA_READINESS.md` records the current controlled-beta readiness state and the remaining founder/operator review gates.
+  - `tests/ops-status.test.ts` covers placeholder env detection, source-refresh age handling, and readiness classification.
+- Phase 10 audit continuation:
+  - Local `.env` now records a source-refresh timestamp through `KIAI_SOURCE_REFRESHED_AT`; the actual `.env` file and secrets remain uncommitted.
+  - Local `OPERATOR_SECRET` was rotated because the previous local token was shorter than the controlled-beta recommendation. The value must not be printed or committed.
+  - New operator audit IDs are hash-derived instead of bearer-token prefixes, so future audit rows stay correlatable without exposing token characters.
+  - Stale Base order `cmpwbv9w30002eismg4eo8z0y` was marked `CHAIN_FAILED` after its receipt proved the stored tx hash was the vault deployment transaction, not a user trade event.
+  - The failed-order classification is intentionally visible in ops status and was recorded through an operator audit action.
+  - Base/Sui real-chain smoke checks confirmed the configured Base vault has bytecode and configured Sui registry/market objects are readable.
+  - 2026-06-06 automated QA re-ran focused tests, typecheck, zero-warning lint, build, live admin ops API smoke, market preview API smoke, and browser smoke. `package.json` now exposes `pnpm test`, `pnpm typecheck`, and `pnpm verify` for repeatable readiness checks; `pnpm verify` passed end to end. Readiness remains `needs_review` because one failed/blocked order is still intentionally visible and actual wallet QA is still a founder/operator gate.
+- Current readiness semantics:
+  - `blocked` means at least one blocker exists, such as missing core env, unsupported collateral, deployed rails missing addresses, stale unreconciled chain events, or failed/blocked/retrying settlement jobs.
+  - `needs_review` means warnings remain, such as missing execution private keys in a non-settlement context, stale/missing source refresh, pending reconciliation, failed/blocked orders, deployed rails without index cursors, or open disputes.
+  - `ready_for_founder_qa` means no blockers or warnings from the implemented status checks. It is not a mainnet or real-money approval.
+- Manual/founder gate still required:
+  - Run the runbooks with actual wallets/RPC state.
+  - Record browser wallet QA evidence for Base and Sui.
+  - Review the beta readiness JSON and `docs/BETA_READINESS.md` before any beta claim.
+  - Keep DeFi, bridges, swaps, yield, sponsored gas, and USDT out of emergency fallback scope.
 
 ## Worktree Parallelization Strategy
 

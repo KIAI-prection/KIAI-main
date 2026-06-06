@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     try {
       quote = lmsrQuote(lmsrState, side, amountUsd);
-    } catch (err) {
+    } catch {
       return NextResponse.json(
         {
           error: "quote_failed",

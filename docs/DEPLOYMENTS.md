@@ -157,7 +157,9 @@ Markets must be created on-chain via `createMarket(bytes32 marketId)` before use
 | `OPERATOR_SECRET` | In `.env` — KIAI admin API bearer token |
 | `KIAI_ALLOW_EARLY_RESOLUTION_FINALIZE` | Optional local/test override. Set to `true` only for controlled tests that need to bypass the dispute deadline. Never enable for production-like settlement runs. |
 | `SPORTS_DATA_API_KEY` | Future optional source-adapter secret for licensed sports data. Do not add until provider/licensing decision is recorded in `docs/RESEARCH.md`. |
-| `RESOLUTION_EVIDENCE_ARCHIVE_BUCKET` | Future optional storage target for source snapshots, screenshots, raw API payloads, and evidence bundle hashes. |
+| `RESOLUTION_EVIDENCE_ARCHIVE_DIR` | Optional local/test archive root for raw evidence payload JSON artifacts. Defaults to `.kiai/evidence-archive`. |
+| `RESOLUTION_EVIDENCE_ARCHIVE_BUCKET` | Future optional hosted storage target for source snapshots, screenshots, raw API payloads, and evidence bundle hashes. |
+| `KIAI_SOURCE_REFRESHED_AT` | ISO timestamp for the latest Base/Sui/Circle/Tether/indexer source-pack refresh before beta changes. Exposed as configured/stale status only through `/api/admin/ops/status`. |
 | `BASE_SEPOLIA_RPC_URL` | `https://sepolia.base.org` |
 | `SUI_TESTNET_RPC_URL` | `https://fullnode.testnet.sui.io:443` |
 | `SUI_TESTNET_GRAPHQL_URL` | `https://sui-testnet.mystenlabs.com/graphql` |
@@ -168,7 +170,7 @@ Resolution deployment note:
 - Do not wire chain settlement directly to sports API payloads, screenshots, or provisional source-adapter results.
 - Resolution finalization must preserve the evidence bundle hash and payout/refund policy used for the chain settlement run.
 - Settlement runs are now represented by per-chain `SettlementJob` records. Operators should prepare/list jobs through `/api/admin/markets/:id/settlement` before running settlement.
-- The deployed Base and Sui vaults currently support only winner-take-all `resolve` and full-refund `cancel`. Split, fractional, manual, partial-refund, and no-winning-share resolution cases must remain blocked/manual until an approved contract or operations path exists.
+- The deployed Base and Sui vaults currently support only winner-take-all `resolve` and full-refund `cancel`. Phase 1 keeps split, fractional, manual, partial-refund, and no-winning-share resolution cases blocked/manual; contract upgrades are deferred until after founder acceptance unless product explicitly changes scope.
 
 Base/Sui/DeFi deployment guardrails, refreshed 2026-06-04:
 

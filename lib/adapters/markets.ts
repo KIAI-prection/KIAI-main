@@ -9,20 +9,28 @@
 
 import { db } from "@/lib/server/db";
 import { marketToUI, type UIMarket } from "@/lib/domain/market-service";
+import { DEMO_MARKET_SLUGS } from "@/lib/market-catalogue/demo-markets";
 
 // Lifecycle states visible to the public
 const PUBLIC_LIFECYCLES = ["LIVE", "REVIEWED", "DEPLOY_PENDING"] as const;
+
+type PublicMarketOptions = {
+  previewCatalogue?: boolean;
+};
 
 // ---------------------------------------------------------------------------
 // Fetch all public markets (equivalent to getTrendingMarkets / mockMarkets)
 // ---------------------------------------------------------------------------
 
 export async function getPublicMarkets(
-  category?: string
+  category?: string,
+  options: PublicMarketOptions = {}
 ): Promise<UIMarket[]> {
   const markets = await db.market.findMany({
     where: {
-      lifecycle: { in: [...PUBLIC_LIFECYCLES] as never[] },
+      ...(options.previewCatalogue
+        ? { slug: { in: DEMO_MARKET_SLUGS } }
+        : { lifecycle: { in: [...PUBLIC_LIFECYCLES] as never[] } }),
       ...(category ? { category } : {}),
     },
     include: {

@@ -1,10 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Heart, Bookmark, Share2 } from "lucide-react";
-import { useTranslations } from "next-intl";
 
 export type SocialPostData = {
   id: string;
@@ -32,8 +32,6 @@ interface SocialPostProps {
 }
 
 export function SocialPost({ post }: SocialPostProps) {
-  const t = useTranslations("social");
-
   return (
     <div className="border-b border-border p-4 hover:bg-secondary/50 transition-colors">
       <div className="flex gap-3">
@@ -75,9 +73,12 @@ export function SocialPost({ post }: SocialPostProps) {
 
           {post.image && (
             <div className="mt-3 rounded-xl overflow-hidden max-w-[400px]">
-              <img
+              <Image
                 src={post.image}
                 alt="Post attachment"
+                width={400}
+                height={260}
+                unoptimized
                 className="w-full h-auto"
               />
             </div>

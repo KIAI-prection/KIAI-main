@@ -126,6 +126,7 @@ Desktop.ini
 .playwright-mcp/
 .firecrawl/
 .gstack/
+.kiai/
 
 # =============================================================================
 # Foundry (EVM contracts)

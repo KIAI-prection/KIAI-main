@@ -9,6 +9,7 @@ import {
   ResolutionStatus,
 } from "@prisma/client";
 import { db } from "@/lib/server/db";
+import { archiveEvidencePayload } from "@/lib/server/evidence-archive";
 import { toPrismaJson } from "@/lib/server/json";
 
 const Hash32Schema = z
@@ -100,6 +101,21 @@ export async function createEvidenceSnapshot(
   const parsed = EvidenceSnapshotInputSchema.parse(input);
   const resolution = await getResolutionForMarket(marketId);
   const payloadHash = parsed.payloadHash ?? createSnapshotHash(parsed.rawPayload);
+  const archive =
+    parsed.archiveUrl || parsed.rawPayload === undefined
+      ? null
+      : await archiveEvidencePayload({
+          payloadHash,
+          rawPayload: parsed.rawPayload,
+          metadata: {
+            marketId,
+            resolutionId: resolution.id,
+            kind: parsed.kind,
+            sourceName: parsed.sourceName,
+            sourceUrl: parsed.sourceUrl,
+            capturedBy,
+          },
+        });
 
   return db.$transaction(async (tx) => {
     const snapshot = await tx.evidenceSnapshot.create({
@@ -110,7 +126,7 @@ export async function createEvidenceSnapshot(
         status: parsed.status,
         sourceName: parsed.sourceName,
         sourceUrl: parsed.sourceUrl,
-        archiveUrl: parsed.archiveUrl,
+        archiveUrl: parsed.archiveUrl ?? archive?.archiveUrl,
         screenshotUrl: parsed.screenshotUrl,
         payloadHash,
         rawPayload:
@@ -134,6 +150,7 @@ export async function createEvidenceSnapshot(
         details: {
           evidenceSnapshotId: snapshot.id,
           kind: snapshot.kind,
+          archiveUrl: snapshot.archiveUrl,
           payloadHash: snapshot.payloadHash,
           sourceName: snapshot.sourceName,
         },

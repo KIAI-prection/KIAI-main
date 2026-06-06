@@ -659,7 +659,19 @@ The supplied research documents list many open-source prediction-market reposito
 - Implemented 2026-06-04: Base/Sui settlement jobs are now durable per-rail records that consume finalized settlement instructions and retry or block independently by chain.
 - Implemented 2026-06-04: first sports source adapter `sumo-jsa` builds structured evidence from operator-reviewed Nihon Sumo Kyokai official-source observations for tournament-winner markets.
 - Implemented 2026-06-04: market-level `resolutionPolicy` gates future review/deploy/live transitions, and governance tables now record evidence snapshots, resolution disputes, and optional oracle assertions.
-- Still deferred to Phase 8/9 boundary: browser/operator UI for governance records, UMA network/collateral/bond spike, production screenshot/archive storage integration, and broader contract support for split/fractional/manual payouts if product chooses it.
+- Implemented 2026-06-05: `/en/operator` exposes a browser-testable internal console over the existing admin APIs for resolution policy, evidence snapshots, Sumo/JSA proposal prefill, resolution proposal submission, oracle assertion metadata, disputes, and settlement jobs.
+- Implemented 2026-06-05: raw evidence payloads can now be archived as local JSON artifacts keyed by payload hash, retrieved through an authenticated admin route, and inspected from the operator console.
+- Implemented 2026-06-05: Phase 9 demo catalogue is now code-backed in `lib/market-catalogue/demo-markets.ts`; every demo market has validated source priority, edge cases, resolver mode, payout/refund policy, close time, outcomes, and Base/Sui deployment plan before seed/runtime use.
+- Implemented 2026-06-05: `/api/markets?preview=catalogue` and `/en/markets?preview=catalogue` expose only the eight known Phase 9 demo slugs for catalogue QA while normal public market visibility remains limited to reviewed/deploy-pending/live markets.
+- Implemented 2026-06-05: superseded demo slugs from the earlier seed pass are archived through audited lifecycle updates when they have no order intents; they are not deleted.
+- Source refresh note 2026-06-05: Formula 1's official 2026 calendar supports Abu Dhabi on 4-6 Dec 2026, and the Premier League official 2026/27 date page supports the season starting on 22 Aug 2026. Keep exact match/team choices source-refreshed before moving EPL/F1 demo markets beyond draft/review.
+- Implemented 2026-06-05: Phase 10 controlled-beta ops status now lives at `GET /api/admin/ops/status`; it surfaces env/source-refresh/deployment/indexer/order/settlement/dispute/oracle/audit readiness without exposing secret values.
+- Implemented 2026-06-05: `docs/RUNBOOKS.md` documents beta readiness, Base deploy, Sui deploy, indexer restart, market pause, failed settlement, incident response, and explicit non-fallbacks for DeFi/bridges/swaps/yield/sponsored gas/USDT.
+- Implemented 2026-06-05: `docs/BETA_READINESS.md` records current controlled-beta readiness as `needs_review`, with evidence for source refresh, local operator-secret rotation, stale-order failure classification, Base/Sui smoke checks, and remaining manual wallet/founder gates.
+- Implemented 2026-06-06: future operator audit IDs are derived from a SHA-256 token hash prefix instead of storing the first characters of the bearer token.
+- Source refresh note 2026-06-05: Base docs still list Base Sepolia RPC as `https://sepolia.base.org`; Circle docs still list Base Sepolia USDC as `0x036CbD53842c5426634e7929541eC2318f3dCF7e` and Sui Testnet USDC as `0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC`; Sui docs remain the implementation authority for Sui RPC/data access; Tether supported-protocol docs remain the gate for any USDT support claim.
+- Decided 2026-06-05 for Phase 1: do not upgrade Base/Sui vault contracts for split/fractional/manual payouts before founder acceptance. Backend settlement instructions can represent those cases, but chain execution remains blocked/manual until a later contract or operations path is approved.
+- Still deferred to Phase 9/production-hardening boundary: production-grade admin auth/roles, UMA network/collateral/bond spike, hosted object storage/screenshot capture integration, and broader contract support for split/fractional/manual payouts if product chooses it.
 
 ### Resolution Edge-Case Research Refresh — 2026-06-04 (IST)
 
@@ -717,14 +729,15 @@ This matrix is the product and engineering source of truth for Phase 8 planning.
 | Paid sports data provider | Open — licensing/API-key decision required before integration |
 | UMA version/network/collateral for Base Sepolia | Open — Phase 8 spike |
 | Sui oracle mirroring design | Open — if UMA is Base-only, KIAI backend must mirror final outcome to Sui with audit evidence |
-| Evidence archiving method | Open — decide screenshot/archive/hash storage path |
+| Evidence archiving method | Implemented first slice — raw payload JSON artifacts are stored under `RESOLUTION_EVIDENCE_ARCHIVE_DIR` or `.kiai/evidence-archive` and served through `GET /api/admin/evidence-archive/:hash`; hosted object storage and screenshot capture remain production upgrades |
 | Evidence snapshot records | Implemented — `EvidenceSnapshot` stores source URLs, archive/screenshot URLs, hashes, raw payload JSON, observed outcome, status, and certainty |
 | Dispute/adjudication records | Implemented — `ResolutionDispute` records source disagreement, oracle challenge, evidence tampering, manual safety, too-early, and other disputes |
 | Oracle assertion records | Implemented metadata layer — `OracleAssertion` stores provider, assertion/request IDs, bond, liveness, status, and payload; actual UMA integration remains a spike |
+| Browser operator console | Implemented first slice — `/en/operator` lets an internal operator exercise Phase 8 governance APIs from the browser with a session-local bearer token, including archived-evidence inspection |
 | Payout vector model | Partially implemented — `lib/domain/resolution-policy.ts` builds settlement instructions for winner-take-all, split, void/refund, fractional, and manual modes |
 | Per-rail settlement jobs | Implemented — `SettlementJob` records prepare and run Base/Sui settlement idempotently from finalized settlement instructions |
 | First sports source adapter | Implemented — `sumo-jsa` maps JSA official-source observations into structured KIAI evidence; direct shell fetch hit JSA URL guard while Exa/browser fetch returned indexed page content |
-| Current vault payout coverage | Partial — deployed vaults support winner-take-all resolve and full-refund cancel; split/fractional/manual/partial refund need contract upgrade or manual remediation |
+| Current vault payout coverage | Phase 1 decision recorded — deployed vaults support winner-take-all resolve and full-refund cancel; split/fractional/manual/partial refund remain backend-represented but chain-blocked/manual until a later approved contract or operations path |
 | Source certainty model | Partially implemented — resolution evidence records provisional, official-confirmed, oracle-final, and manual-adjudicated certainty; provisional evidence cannot finalize settlement |
 
 ---

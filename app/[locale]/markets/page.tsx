@@ -2,10 +2,21 @@ import { getTranslations } from "next-intl/server";
 import { MarketCard } from "@/components/market-card";
 import { getPublicMarkets } from "@/lib/adapters/markets";
 
-export default async function MarketsPage() {
+type MarketsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function MarketsPage({ searchParams }: MarketsPageProps) {
   const t = await getTranslations("nav");
   const tCommon = await getTranslations("common");
-  const markets = await getPublicMarkets();
+  const params = searchParams ? await searchParams : {};
+  const preview = params.preview;
+  const category = params.category;
+  const previewCatalogue = Array.isArray(preview)
+    ? preview.includes("catalogue")
+    : preview === "catalogue";
+  const selectedCategory = Array.isArray(category) ? category[0] : category;
+  const markets = await getPublicMarkets(selectedCategory, { previewCatalogue });
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 lg:px-6">

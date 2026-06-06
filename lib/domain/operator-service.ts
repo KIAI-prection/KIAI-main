@@ -27,6 +27,7 @@ import {
 import { ResolutionEvidenceSchema } from "@/lib/domain/resolution-evidence";
 import { createSnapshotHash } from "@/lib/domain/resolution-governance";
 import { assertMarketResolutionPolicyReady } from "@/lib/domain/market-resolution-policy";
+import { buildCatalogueResolutionPolicy } from "@/lib/market-catalogue/policies";
 
 // ---------------------------------------------------------------------------
 // Allowed lifecycle transitions
@@ -98,13 +99,22 @@ export async function createMarket(
     lmsrB = 100,
     blockedRegions = [],
     createChainDeployments = true,
-    sourcePolicyEn: _sourcePolicyEn,
+    sourcePolicyEn,
     ...marketData
   } = input;
 
   if (outcomes.length < 2) {
     throw new Error("A market must have at least 2 outcomes.");
   }
+
+  const initialResolutionPolicy = sourcePolicyEn
+    ? buildCatalogueResolutionPolicy({
+        ruleVersion: "operator-created-market-v1",
+        question: marketData.titleEn,
+        primarySource: sourcePolicyEn,
+        outcomes,
+      })
+    : null;
 
   // Check slug uniqueness
   const existing = await db.market.findUnique({
@@ -124,6 +134,9 @@ export async function createMarket(
         subtitleJa: marketData.subtitleJa ?? "",
         categoryLabelJa: marketData.categoryLabelJa ?? "",
         lifecycle: "DRAFT",
+        resolutionPolicy: initialResolutionPolicy
+          ? toPrismaJson(initialResolutionPolicy)
+          : undefined,
         lmsrB,
         qYes: 0,
         qNo: 0,

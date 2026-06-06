@@ -594,8 +594,15 @@ Current implementation baseline after the 2026-06-04 open-source prediction-mark
 - Settlement jobs are now durable per-chain records keyed by resolution and chain. The runner consumes only the finalized settlement instruction and records action, status, attempts, last error, and tx hash/digest.
 - Market-level `resolutionPolicy` is now the pre-trade rule contract. Future transitions toward `REVIEWED`, `DEPLOY_PENDING`, or `LIVE` require a valid policy with source priority, edge cases, resolver mode, payout mode, refund policy, and source-certainty policy.
 - Evidence snapshots, resolution disputes, and optional oracle assertions are now first-class records. Resolution proposals also archive their primary source evidence automatically.
-- Current deployed Base and Sui vaults execute only winner-take-all resolution and full-refund cancellation. Split, fractional, manual, partial-refund, and no-winning-share cases are blocked with explicit job errors until the contracts or an approved manual remediation path support them.
-- This is still the operator-reviewed official-source baseline. It is not a full UMA integration and does not replace the Phase 8 need for source adapters, refunds/claims UX, evidence archiving, and oracle/dispute tables.
+- Raw source/API payloads are archived as JSON artifacts keyed by payload hash. The default local root is `.kiai/evidence-archive`, overrideable by `RESOLUTION_EVIDENCE_ARCHIVE_DIR`; operators retrieve artifacts through `GET /api/admin/evidence-archive/:hash` using the same admin bearer-token gate.
+- `/en/operator` is now the first internal browser console over these records and APIs. It is intentionally a thin operator workflow surface: bearer token entry stays session-local in the browser, actions call `/api/admin/*` routes rather than bypassing API validation, and internal evidence archive artifacts can be fetched back into the console for manual review.
+- Phase 9 catalogue data now lives in `lib/market-catalogue/demo-markets.ts`, with pure policy generation in `lib/market-catalogue/policies.ts`. `prisma/seed.ts` syncs the eight demo markets into real database rows with outcomes, resolution policies, compliance records, pending resolution records, and Base/Sui chain deployment plans.
+- Normal public market queries still expose only reviewed/deploy-pending/live markets. Catalogue QA uses explicit preview mode (`/api/markets?preview=catalogue` or `/en/markets?preview=catalogue`) scoped to the eight known demo slugs so draft breadth can be browser-tested without changing trading eligibility.
+- Superseded demo catalogue records are archived through lifecycle state plus operator audit actions when safe; they are not deleted from the database.
+- Phase 10 adds a read-only operator status boundary at `GET /api/admin/ops/status`. It reports beta-readiness issues from env presence, source-refresh freshness, deployment/indexer state, order failures, settlement-job state, disputes, oracle assertions, and recent operator audit actions without returning raw secret values.
+- The operator console can display this status JSON, but the server remains the authority for readiness classification. UI rendering does not make a blocked beta ready.
+- Current deployed Base and Sui vaults execute only winner-take-all resolution and full-refund cancellation. Phase 1 keeps split, fractional, manual, partial-refund, and no-winning-share cases backend-represented but chain-blocked with explicit job errors; contract upgrades are deferred until after founder acceptance unless product explicitly changes scope.
+- This is still the operator-reviewed official-source baseline. It is not a full UMA integration and does not replace the Phase 8 need for broader source adapters, refunds/claims UX, hosted evidence storage, and oracle/dispute operations.
 
 ### Resolution Semantics
 
@@ -640,7 +647,7 @@ Settlement execution is per rail:
 5. Base uses `resolveMarket` or `cancelMarket`; Sui uses `resolve_market` or `cancel_market`.
 6. Success stores the Base tx hash or Sui digest on the job. Failure stores the error without changing the finalized outcome.
 
-Important contract limitation: both deployed vaults require positive total winning shares for `resolve`. If nobody on a rail holds the winning outcome, the runner blocks the job instead of sending a transaction that would revert. Product must decide whether that case becomes a refund/manual remediation or a contract upgrade.
+Important contract limitation: both deployed vaults require positive total winning shares for `resolve`. If nobody on a rail holds the winning outcome, the runner blocks the job instead of sending a transaction that would revert. Phase 1 treats this as blocked/manual remediation rather than a contract upgrade.
 
 ### Source Adapter States
 
@@ -656,7 +663,7 @@ Every source adapter must normalize provider/event states into KIAI states:
 | Provider/API error | `evidence_unavailable` | No |
 | Provider result conflicts with official source | `disputed` | No |
 
-The JSA/sumo adapter intentionally does not auto-settle from live page content. It returns a structured evidence payload and suggested proposal body for operator review. Direct shell fetches of the JSA page may hit site URL guards; Exa/browser fetch can read indexed content, so production evidence archiving still needs a durable snapshot mechanism rather than relying on ad hoc scraping.
+The JSA/sumo adapter intentionally does not auto-settle from live page content. It returns a structured evidence payload and suggested proposal body for operator review. Direct shell fetches of the JSA page may hit site URL guards; Exa/browser fetch can read indexed content, so the resolver archives the reviewed raw payload locally by hash. Production should replace or extend this with hosted object storage and screenshot/archive capture for externally durable artifacts.
 
 User-visible states:
 

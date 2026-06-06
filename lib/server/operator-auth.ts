@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 
 /**
  * Returns null if the request is authorised.
@@ -65,6 +66,6 @@ export function operatorId(request: NextRequest): string {
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7)
     : "unknown";
-  // Use first 8 chars as a stable but non-secret identifier
-  return `op:${token.slice(0, 8)}`;
+  const digest = createHash("sha256").update(token).digest("hex").slice(0, 12);
+  return `op:${digest}`;
 }

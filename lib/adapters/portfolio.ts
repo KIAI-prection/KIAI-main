@@ -63,7 +63,7 @@ export async function getPortfolioForWallet(
   let totalClaimableUsd = 0;
 
   // Map to UI Position shape (compatible with mock-data.ts Position type)
-  const uiPositions: Position[] = positions.map((p, i) => {
+  const uiPositions: Position[] = positions.map((p) => {
     const market = marketMap.get(p.marketId);
     const outcome = market?.outcomes.find((o) => o.slug === p.outcomeSlug);
     const currentPrice =

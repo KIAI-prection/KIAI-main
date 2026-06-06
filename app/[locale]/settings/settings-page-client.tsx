@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { useTheme } from "@/components/theme-provider";
-import { Globe, Moon, Sun, Bell, Shield, User } from "lucide-react";
+import { Globe, Sun, Bell, Shield, User } from "lucide-react";
 
 export function SettingsPageClient() {
   const t = useTranslations("settings");

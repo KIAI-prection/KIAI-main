@@ -290,9 +290,12 @@ Resolution product rule:
 - A sports market must not imply that one side simply "wins" and the other "loses" unless the rule also states what happens on draws, postponements, cancellations, forfeits, abandoned matches, and official result changes.
 - Provisional/live API data may be shown as status evidence, but final settlement should wait for the named official source or oracle-final state unless the market rule explicitly says otherwise.
 - If no outcome is assignable, KIAI should use the market's predeclared unresolvable policy: `split_50_50`, `void_refund`, or `manual_adjudication`.
-- Current deployed Base/Sui vaults can execute winner-take-all settlement and full-refund cancellation. Split, fractional, manual, partial-refund, and no-winning-share cases must show a blocked/manual settlement state until product approves a contract upgrade or operational remediation path.
+- Current deployed Base/Sui vaults can execute winner-take-all settlement and full-refund cancellation. For Phase 1, split, fractional, manual, partial-refund, and no-winning-share cases must show a blocked/manual settlement state; contract upgrades are deferred until after founder acceptance unless product explicitly changes scope.
 - The first source-adapter path is Nagoya/sumo through an operator-reviewed Nihon Sumo Kyokai official-source observation. The adapter can prefill evidence and suggested proposal shape, but the operator still reviews and submits the proposal before the dispute window.
 - New markets must store a pre-trade resolution policy before they can move toward review/deployment. After close, evidence snapshots, dispute records, and oracle assertion metadata preserve why the final outcome was accepted or challenged.
+- Raw evidence payloads without an external archive URL are archived by payload hash and retrievable through the authenticated admin evidence-archive route, so an operator can inspect the exact source/API payload behind a resolution.
+- Internal operators can now browser-test the first governance workflow at `/en/operator`: policy setup, official evidence capture, archived evidence inspection, Sumo/JSA proposal prefill, proposal submission, oracle assertion metadata, dispute review, and settlement job visibility. This is not yet the final production admin app; role-based auth and hardened form controls remain future work.
+- Controlled beta readiness is now a product-visible gate, not a private engineering judgment. Operators use `/api/admin/ops/status` and `docs/RUNBOOKS.md` to see whether missing env, stale sources, deployment/indexer issues, failed orders, settlement jobs, or disputes block beta claims.
 
 ## UX Direction
 
