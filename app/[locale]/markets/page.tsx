@@ -27,19 +27,19 @@ export default async function MarketsPage({ searchParams }: MarketsPageProps) {
 
       {/* Filters */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground h-10">
           <option>All Categories</option>
           <option>Politics</option>
           <option>Sports</option>
           <option>Tech</option>
         </select>
-        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground h-10">
           <option>All Status</option>
           <option>Live</option>
           <option>Upcoming</option>
           <option>Closed</option>
         </select>
-        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground h-10">
           <option>Sort by Volume</option>
           <option>Sort by Newest</option>
           <option>Sort by Ending Soon</option>

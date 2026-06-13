@@ -54,7 +54,7 @@ export function MarketCard({ market }: MarketCardProps) {
         </div>
 
         {/* Title */}
-        <h3 className="mb-2 text-base font-semibold leading-tight text-foreground">
+        <h3 className="mb-2 text-base font-semibold leading-tight text-foreground min-h-[3rem]">
           {market.title[locale as "ja" | "en"]}
         </h3>
 
@@ -99,7 +99,7 @@ export function MarketCard({ market }: MarketCardProps) {
 
                 <div
                   className={cn(
-                    "flex h-7 min-w-[52px] items-center justify-center rounded-full px-2 text-xs font-semibold tabular-nums",
+                    "flex h-7 min-w-[60px] items-center justify-center rounded-full px-2 text-xs font-semibold tabular-nums",
                     contestant.chance ===
                       Math.max(...topContestants.map((c) => c.chance))
                       ? "bg-yes-bg text-yes"
@@ -114,7 +114,7 @@ export function MarketCard({ market }: MarketCardProps) {
         </div>
 
         {/* Footer */}
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-foreground-muted">
+        <div className="mt-4 flex min-h-[1.5rem] items-center justify-between border-t border-border pt-3 text-xs text-foreground-muted">
           <span className="tabular-nums">{formatVolume(market.volume)} vol</span>
           <span className="tabular-nums">
             {market.marketCount} {t("markets")}

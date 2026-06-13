@@ -150,19 +150,19 @@ Markets must be created on-chain via `createMarket(bytes32 marketId)` before use
 | `SUI_TESTNET_KIAI_VAULT_PACKAGE_ID` | `0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089` |
 | `SUI_TESTNET_KIAI_VAULT_REGISTRY_ID` | `0xa522ecb86041af442dddc00db3a24e107918443cc6d5fd486adc90bc65784754` |
 | `SUI_TESTNET_KIAI_OPERATOR_CAP_ID` | `0x583b904cc0837d44b16d6dd17df133938c8d0202a75c9d73358c9b3d9b393ace` |
-| `SUI_TESTNET_NAGOYA_MARKET_OBJECT_ID` | `0x09b7dccd64037e3c5fcef36dc43bd5f62fecfbe62f59a0431ec9c3b2a8205522` |
 | `SUI_TESTNET_USDC_TYPE` | `0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC` |
 | `DEPLOYER_PRIVATE_KEY` | In `.env` — Base Sepolia deployer — never commit |
 | `SUI_OPERATOR_PRIVATE_KEY` | In `.env` — Sui testnet operator — never commit |
 | `OPERATOR_SECRET` | In `.env` — KIAI admin API bearer token |
 | `KIAI_ALLOW_EARLY_RESOLUTION_FINALIZE` | Optional local/test override. Set to `true` only for controlled tests that need to bypass the dispute deadline. Never enable for production-like settlement runs. |
-| `SPORTS_DATA_API_KEY` | Future optional source-adapter secret for licensed sports data. Do not add until provider/licensing decision is recorded in `docs/RESEARCH.md`. |
+| `API_FOOTBALL_API_KEY` | Optional API-FOOTBALL key for `POST /api/admin/markets/:id/source-adapters/api-football`. Used for operator evidence prefill only. |
+| `API_FOOTBALL_BASE_URL` | Optional override for API-FOOTBALL base URL. Defaults to `https://v3.football.api-sports.io`. |
+| `SPORTS_DATA_API_KEY` | Legacy/fallback sports-data secret accepted by the API-FOOTBALL adapter if `API_FOOTBALL_API_KEY` is unset. Prefer `API_FOOTBALL_API_KEY` for new setup. |
 | `RESOLUTION_EVIDENCE_ARCHIVE_DIR` | Optional local/test archive root for raw evidence payload JSON artifacts. Defaults to `.kiai/evidence-archive`. |
-| `RESOLUTION_EVIDENCE_ARCHIVE_BUCKET` | Future optional hosted storage target for source snapshots, screenshots, raw API payloads, and evidence bundle hashes. |
 | `KIAI_SOURCE_REFRESHED_AT` | ISO timestamp for the latest Base/Sui/Circle/Tether/indexer source-pack refresh before beta changes. Exposed as configured/stale status only through `/api/admin/ops/status`. |
 | `BASE_SEPOLIA_RPC_URL` | `https://sepolia.base.org` |
 | `SUI_TESTNET_RPC_URL` | `https://fullnode.testnet.sui.io:443` |
-| `SUI_TESTNET_GRAPHQL_URL` | `https://sui-testnet.mystenlabs.com/graphql` |
+| `SUI_TESTNET_GRAPHQL_URL` | `https://graphql.testnet.sui.io/graphql` |
 
 Resolution deployment note:
 

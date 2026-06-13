@@ -71,7 +71,7 @@ These are computed in `lib/domain/market-service.ts`.
 
 Both write to the normalized `ChainEvent` table in Postgres, feeding the reconciliation pipeline.
 
-**Production upgrade path:** Envio HyperIndex (Base) when approaching mainnet — HyperSync speed, auto-reorg handling, hosted service. Requires ENVIO_API_TOKEN. The reconciliation layer is unchanged.
+**Production upgrade path:** Envio HyperIndex (Base) when approaching mainnet — HyperSync speed, auto-reorg handling, hosted service. Add provider credentials only when the code path is implemented. The reconciliation layer is unchanged.
 
 ## Base/Sui/DeFi Runtime Boundary — Refreshed 2026-06-04
 
@@ -595,6 +595,7 @@ Current implementation baseline after the 2026-06-04 open-source prediction-mark
 - Market-level `resolutionPolicy` is now the pre-trade rule contract. Future transitions toward `REVIEWED`, `DEPLOY_PENDING`, or `LIVE` require a valid policy with source priority, edge cases, resolver mode, payout mode, refund policy, and source-certainty policy.
 - Evidence snapshots, resolution disputes, and optional oracle assertions are now first-class records. Resolution proposals also archive their primary source evidence automatically.
 - Raw source/API payloads are archived as JSON artifacts keyed by payload hash. The default local root is `.kiai/evidence-archive`, overrideable by `RESOLUTION_EVIDENCE_ARCHIVE_DIR`; operators retrieve artifacts through `GET /api/admin/evidence-archive/:hash` using the same admin bearer-token gate.
+- API-FOOTBALL is now the first generic sports event API adapter. `POST /api/admin/markets/:id/source-adapters/api-football` fetches a fixture by id, normalizes provider statuses into KIAI states, hashes the raw payload, and returns operator-reviewable evidence plus an outcome/refund suggestion. It defaults to provisional source certainty and cannot silently finalize settlement.
 - `/en/operator` is now the first internal browser console over these records and APIs. It is intentionally a thin operator workflow surface: bearer token entry stays session-local in the browser, actions call `/api/admin/*` routes rather than bypassing API validation, and internal evidence archive artifacts can be fetched back into the console for manual review.
 - Phase 9 catalogue data now lives in `lib/market-catalogue/demo-markets.ts`, with pure policy generation in `lib/market-catalogue/policies.ts`. `prisma/seed.ts` syncs the eight demo markets into real database rows with outcomes, resolution policies, compliance records, pending resolution records, and Base/Sui chain deployment plans.
 - Normal public market queries still expose only reviewed/deploy-pending/live markets. Catalogue QA uses explicit preview mode (`/api/markets?preview=catalogue` or `/en/markets?preview=catalogue`) scoped to the eight known demo slugs so draft breadth can be browser-tested without changing trading eligibility.

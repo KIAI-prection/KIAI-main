@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx tests/operator-auth.test.ts && tsx tests/ops-status.test.ts && tsx tests/market-catalogue.test.ts && tsx tests/market-resolution-policy.test.ts && tsx tests/resolution-policy.test.ts && tsx tests/settlement-plan.test.ts && tsx tests/sumo-jsa-source-adapter.test.ts && tsx tests/resolution-governance.test.ts && tsx tests/operator-console-defaults.test.ts && tsx tests/operator-console-archive-records.test.ts && tsx tests/evidence-archive.test.ts",
+    "test": "tsx tests/operator-auth.test.ts && tsx tests/ops-status.test.ts && tsx tests/market-catalogue.test.ts && tsx tests/market-resolution-policy.test.ts && tsx tests/resolution-policy.test.ts && tsx tests/settlement-plan.test.ts && tsx tests/sumo-jsa-source-adapter.test.ts && tsx tests/api-football-source-adapter.test.ts && tsx tests/resolution-governance.test.ts && tsx tests/operator-console-defaults.test.ts && tsx tests/operator-console-archive-records.test.ts && tsx tests/evidence-archive.test.ts",
+    "demo:football": "tsx scripts/demo-api-football.ts",
     "verify": "pnpm test && pnpm typecheck && pnpm lint && pnpm build"
   },
   "dependencies": {

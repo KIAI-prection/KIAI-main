@@ -2,7 +2,8 @@
 
 import { Link } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { Search, Menu, Trophy, ChevronDown } from "lucide-react";
+import { Search, Menu, Trophy, ChevronDown, Sun, Moon } from "lucide-react";
+import { useTheme } from "../components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ export function Header() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
+  const { setTheme, resolvedTheme } = useTheme();
 
   return (
     <header className="sticky top-0 z-50 h-16 border-b border-border bg-background">
@@ -125,9 +127,11 @@ export function Header() {
             {t("deposit")}
           </Button>
 
-          <Button variant="ghost" size="icon" className="hidden lg:flex">
-            <Trophy className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="hidden lg:flex" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+            {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
+
+
 
           {/* Mobile Menu */}
           <Sheet>

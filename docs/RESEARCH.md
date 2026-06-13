@@ -369,13 +369,13 @@ The current Sui TypeScript SDK quick start example (sdk.mystenlabs.com) uses `Su
 **Envio HyperIndex** (fetched 2026-06-02):
 - Supports: EVM (70+ chains via HyperSync), Solana (experimental), Fuel.
 - **Does NOT support Sui.**
-- Requires `ENVIO_API_TOKEN` from November 2025.
+- Requires hosted-provider credentials from November 2025; do not add an env var until the Envio code path is implemented.
 - V3 HyperSync is up to 2000x faster than RPC. Factory contract support. Auto-generated GraphQL API. Hosted service via `pnpx envio init`.
 
 **Decision updated 2026-06-03:**
 - **Base events (Phase 6 testnet)**: Custom TypeScript **viem log poller** — uses existing viem client, `getLogs` / `watchContractEvent`. Zero cost, zero external service, zero signup. Same `ChainEvent` schema as Sui poller.
 - **Sui events**: Custom TypeScript event poller using **Sui GraphQL RPC** (`/graphql`) — no commercial indexer supports Sui. Query `transactionBlocks` and `events` by package/module/event type. Deduplicate by checkpoint + transaction digest.
-- **Production upgrade (mainnet)**: Replace Base viem poller with Envio HyperIndex — HyperSync speed, auto reorg handling, hosted. Requires ENVIO_API_TOKEN. The reconciliation layer (ChainEvent → Trade → UserPosition) does NOT change.
+- **Production upgrade (mainnet)**: Replace Base viem poller with Envio HyperIndex — HyperSync speed, auto reorg handling, hosted. Add provider credentials only with the implemented Envio adapter. The reconciliation layer (ChainEvent → Trade → UserPosition) does NOT change.
 - Rationale for change: Envio requires an API token mandatory since Nov 2025 and has paid tiers. For testnet Phase 6 with low event volume, a viem poller is functionally identical, simpler, and free.
 
 Implementation impact: Two TypeScript pollers in `lib/indexer/` (Base viem poller + Sui GraphQL poller). Reconciliation service in `lib/server/reconcile.ts`. No external services needed for Phase 6.
@@ -672,6 +672,25 @@ The supplied research documents list many open-source prediction-market reposito
 - Source refresh note 2026-06-05: Base docs still list Base Sepolia RPC as `https://sepolia.base.org`; Circle docs still list Base Sepolia USDC as `0x036CbD53842c5426634e7929541eC2318f3dCF7e` and Sui Testnet USDC as `0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC`; Sui docs remain the implementation authority for Sui RPC/data access; Tether supported-protocol docs remain the gate for any USDT support claim.
 - Decided 2026-06-05 for Phase 1: do not upgrade Base/Sui vault contracts for split/fractional/manual payouts before founder acceptance. Backend settlement instructions can represent those cases, but chain execution remains blocked/manual until a later contract or operations path is approved.
 - Still deferred to Phase 9/production-hardening boundary: production-grade admin auth/roles, UMA network/collateral/bond spike, hosted object storage/screenshot capture integration, and broader contract support for split/fractional/manual payouts if product chooses it.
+
+### Sports Event API Adapter Refresh — 2026-06-07 (IST)
+
+**Scope**: choose and wire one practical sports event API for operator evidence prefill without weakening the resolution/oracle model.
+
+| Source | Finding | KIAI decision |
+|---|---|---|
+| API-SPORTS / API-FOOTBALL docs: https://api-sports.io/documentation/football/v3 | The football API uses `GET https://v3.football.api-sports.io/fixtures` with an `x-apisports-key` header, supports fixture id lookup, and documents fixture statuses including not-started, live, suspended, interrupted, finished, postponed, cancelled, abandoned, technical loss, and walkover. It also warns that availability can lag reality depending on competition. | Implement first generic football fixture adapter against API-FOOTBALL. Treat results as structured evidence prefill by default, not silent settlement authority. |
+| SportsDataIO Global API docs and soccer workflow: https://sportsdata.io/developers/api-documentation/global and https://sportsdata.io/developers/workflow-guide/soccer | SportsDataIO has event schedules, post-game scores, live scores, API-key auth, and commercial prediction-market positioning. Its docs distinguish final-only scores from live game state. | Keep as the higher-grade commercial candidate for production licensing review, especially if KIAI needs broader sport coverage and settlement-grade contracts. Do not wire until package/licensing choice is made. |
+| TheSportsDB docs: https://www.thesportsdb.com/documentation | TheSportsDB exposes sports event lookup/results APIs and rate-limited free tiers, but describes itself as a crowd-sourced sports database. | Useful for discovery/testing and public metadata, but weaker as a settlement evidence source than official league pages or licensed commercial feeds. |
+
+Implemented 2026-06-07:
+
+- Added `lib/domain/source-adapters/api-football.ts`.
+- Added `POST /api/admin/markets/:id/source-adapters/api-football`.
+- The adapter fetches real fixture payloads using `API_FOOTBALL_API_KEY` or the legacy `SPORTS_DATA_API_KEY` fallback, normalizes API-FOOTBALL statuses into KIAI provider event statuses, hashes the raw payload, and returns a `sourceSnapshot` plus suggested resolution.
+- Final-like statuses `FT`, `AET`, `PEN`, `AWD`, and `WO` can produce a mapped outcome suggestion. Live/not-started/postponed/suspended/interrupted states cannot propose a winner. Cancelled/abandoned states suggest `void_refund`.
+- Default `sourceCertainty` remains `provisional`, so existing finalization code rejects it for settlement unless an operator attaches official-confirmed, oracle-final, or manual-adjudicated evidence under the market's written policy.
+- API-FOOTBALL is now a source adapter, not the oracle. The market's written resolution policy, official source priority, operator review, dispute window, and final settlement instruction remain authoritative.
 
 ### Resolution Edge-Case Research Refresh — 2026-06-04 (IST)
 

@@ -1427,6 +1427,7 @@ Phase 8 implementation progress, 2026-06-04:
 - Verified this slice with `pnpm exec prisma validate`, `pnpm exec prisma generate`, `pnpm exec tsx tests/resolution-policy.test.ts`, `pnpm exec tsx tests/settlement-plan.test.ts`, `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm build`.
 - Added the first launch source adapter: `lib/domain/source-adapters/sumo-jsa.ts` for Nihon Sumo Kyokai/JSA official tournament-winner evidence.
 - Added `POST /api/admin/markets/:id/source-adapters/sumo-jsa` to produce a reviewed `sourceSnapshot` and suggested resolution proposal for Nagoya/sumo markets.
+- Added the first generic sports event API adapter: `lib/domain/source-adapters/api-football.ts` plus `POST /api/admin/markets/:id/source-adapters/api-football`. It fetches API-FOOTBALL fixture results with an operator-provided outcome map, normalizes final/live/postponed/cancelled/abandoned statuses, hashes the raw API payload, and returns prefill evidence without bypassing source-certainty or dispute rules.
 - Updated resolution proposal flow so non-outcome settlement proposals such as `void_refund` can enter the dispute window without inventing a fake winning outcome.
 - Verified adapter behavior with `pnpm exec tsx tests/sumo-jsa-source-adapter.test.ts` and `pnpm exec tsc --noEmit`.
 - Added market-level `resolutionPolicy` JSON and `PUT/GET /api/admin/markets/:id/resolution-policy` so markets can store source priority, edge-case rules, resolver mode, payout mode, refund policy, and source-certainty policy before trading.

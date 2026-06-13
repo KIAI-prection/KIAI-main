@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  buildApiFootballFixtureDraft,
   buildDisputeDraft,
   buildDisputeResolutionDraft,
   buildEvidenceSnapshotDraft,
@@ -112,6 +113,7 @@ export function OperatorConsoleClient() {
   const [disputeJson, setDisputeJson] = useState("");
   const [disputeResolutionJson, setDisputeResolutionJson] = useState("");
   const [sumoJson, setSumoJson] = useState("");
+  const [apiFootballJson, setApiFootballJson] = useState("");
   const [proposalJson, setProposalJson] = useState("");
   const [adapterResult, setAdapterResult] = useState("");
   const [archivePreviewJson, setArchivePreviewJson] = useState("");
@@ -145,6 +147,7 @@ export function OperatorConsoleClient() {
     setDisputeJson(pretty(buildDisputeDraft()));
     setDisputeResolutionJson(pretty(buildDisputeResolutionDraft()));
     setSumoJson(pretty(buildSumoJsaObservationDraft(selectedMarketForDrafts)));
+    setApiFootballJson(pretty(buildApiFootballFixtureDraft(selectedMarketForDrafts)));
     setProposalJson("");
     setAdapterResult("");
     setArchivePreviewJson("");
@@ -296,6 +299,26 @@ export function OperatorConsoleClient() {
       const result = await adminApi<{
         suggestedResolution?: unknown;
       }>("/api/admin/markets/" + selectedMarketId + "/source-adapters/sumo-jsa", {
+        method: "POST",
+        body: JSON.stringify(parsed.data),
+      });
+      setAdapterResult(pretty(result));
+      if (result.suggestedResolution) {
+        setProposalJson(pretty(result.suggestedResolution));
+      }
+    });
+  }
+
+  async function runApiFootballAdapter() {
+    const parsed = parseJson(apiFootballJson);
+    if (!parsed.ok) {
+      pushLog("error", "Run API-Football adapter: " + parsed.message);
+      return;
+    }
+    await run("Run API-Football adapter", async () => {
+      const result = await adminApi<{
+        suggestedResolution?: unknown;
+      }>("/api/admin/markets/" + selectedMarketId + "/source-adapters/api-football", {
         method: "POST",
         body: JSON.stringify(parsed.data),
       });
@@ -509,6 +532,16 @@ export function OperatorConsoleClient() {
                 actionIcon={<Play className="h-4 w-4" />}
                 disabled={marketDisabled}
                 onAction={runSumoAdapter}
+              />
+              <JsonPanel
+                title="API-Football Source Adapter"
+                icon={<Activity className="h-4 w-4" />}
+                value={apiFootballJson}
+                onChange={setApiFootballJson}
+                actionLabel="Fetch Fixture"
+                actionIcon={<Play className="h-4 w-4" />}
+                disabled={marketDisabled}
+                onAction={runApiFootballAdapter}
               />
               <JsonPanel
                 title="Resolution Proposal"

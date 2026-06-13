@@ -221,27 +221,30 @@ export const DEMO_MARKETS: DemoMarket[] = [
     },
   }),
   withPolicy({
-    slug: "epl-2026-27-opening-weekend-featured-match",
-    titleEn: "EPL 2026/27 — Opening Weekend Featured Match",
-    titleJa: "プレミアリーグ26/27 — 開幕週注目試合",
-    subtitleEn: "Result of KIAI's selected Premier League opening-weekend match after fixtures are official.",
-    subtitleJa: "公式日程発表後にKIAIが指定するプレミアリーグ開幕週の注目試合結果",
+    slug: "thailand-u19-vs-australia-u19-asean-2026",
+    titleEn: "Thailand U19 vs Australia U19 — ASEAN Championship",
+    titleJa: "タイU19 vs オーストラリアU19 — ASEAN選手権",
+    subtitleEn:
+      "Live API-FOOTBALL demo market for fixture 1553093 in the ASEAN Championship U19.",
+    subtitleJa:
+      "API-FOOTBALL fixture 1553093 を使う ASEAN U19 選手権のライブデモ市場",
     category: "sports",
     categoryLabelEn: "Football",
     categoryLabelJa: "サッカー",
-    closeAt: new Date("2026-08-24T00:00:00Z"),
+    closeAt: new Date("2026-06-13T13:15:00Z"),
     lmsrB: 200,
     outcomes: [
-      { slug: "home-win", name: "Home Win" },
+      { slug: "home-win", name: "Thailand U19 win", flag: "🇹🇭" },
       { slug: "draw", name: "Draw" },
-      { slug: "away-win", name: "Away Win" },
+      { slug: "away-win", name: "Australia U19 win", flag: "🇦🇺" },
     ],
-    sourcePolicyEn: "Premier League official fixture and result page after the 2026/27 fixtures are released.",
-    ruleVersion: "premier-league-match-result-v1",
-    primarySource: "Premier League official match result",
+    sourcePolicyEn:
+      "API-FOOTBALL fixture 1553093 prefill, reviewed against the official ASEAN Championship U19 result before settlement.",
+    ruleVersion: "api-football-fixture-1553093-match-result-v1",
+    primarySource: "Official ASEAN Championship U19 match result",
     sourcePriority: [
-      "Premier League official match result",
-      "Premier League official fixture page",
+      "Official ASEAN Championship U19 match result",
+      "API-FOOTBALL fixture 1553093",
     ],
     edgeCases: {
       drawNoContest: "Draw resolves to the draw outcome when the official result is a draw.",
@@ -315,6 +318,7 @@ export const DEMO_MARKET_SLUGS = DEMO_MARKETS.map((market) => market.slug);
 
 export const SUPERSEDED_DEMO_MARKET_SLUGS = [
   "japan-house-councillors-2025-ldp-seats",
+  "epl-2026-27-opening-weekend-featured-match",
   "epl-man-city-vs-arsenal-2026-aug",
   "f1-japanese-gp-2026-winner",
 ] as const;

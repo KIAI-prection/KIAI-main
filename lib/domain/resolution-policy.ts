@@ -98,6 +98,7 @@ export const SettlementInstructionSchema = z
   .strict();
 
 export type SourceCertainty = z.infer<typeof SourceCertaintySchema>;
+export type ProviderEventStatus = z.infer<typeof ProviderEventStatusSchema>;
 export type PayoutMode = z.infer<typeof PayoutModeSchema>;
 export type RefundPolicy = z.infer<typeof RefundPolicySchema>;
 export type ResolutionRule = z.infer<typeof ResolutionRuleSchema>;
