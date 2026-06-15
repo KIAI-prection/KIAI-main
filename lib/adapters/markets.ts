@@ -10,13 +10,39 @@
 import { db } from "@/lib/server/db";
 import { marketToUI, type UIMarket } from "@/lib/domain/market-service";
 import { DEMO_MARKET_SLUGS } from "@/lib/market-catalogue/demo-markets";
+import type { Prisma } from "@prisma/client";
 
 // Lifecycle states visible to the public
 const PUBLIC_LIFECYCLES = ["LIVE", "REVIEWED", "DEPLOY_PENDING"] as const;
 
 type PublicMarketOptions = {
   previewCatalogue?: boolean;
+  query?: string;
 };
+
+function buildMarketSearchWhere(query?: string): Prisma.MarketWhereInput {
+  const trimmed = query?.trim();
+  if (!trimmed) return {};
+
+  return {
+    OR: [
+      { titleEn: { contains: trimmed, mode: "insensitive" } },
+      { titleJa: { contains: trimmed, mode: "insensitive" } },
+      { subtitleEn: { contains: trimmed, mode: "insensitive" } },
+      { subtitleJa: { contains: trimmed, mode: "insensitive" } },
+      { category: { contains: trimmed, mode: "insensitive" } },
+      { categoryLabelEn: { contains: trimmed, mode: "insensitive" } },
+      { categoryLabelJa: { contains: trimmed, mode: "insensitive" } },
+      {
+        outcomes: {
+          some: {
+            name: { contains: trimmed, mode: "insensitive" },
+          },
+        },
+      },
+    ],
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Fetch all public markets (equivalent to getTrendingMarkets / mockMarkets)
@@ -28,6 +54,7 @@ export async function getPublicMarkets(
 ): Promise<UIMarket[]> {
   const markets = await db.market.findMany({
     where: {
+      ...buildMarketSearchWhere(options.query),
       ...(options.previewCatalogue
         ? { slug: { in: DEMO_MARKET_SLUGS } }
         : { lifecycle: { in: [...PUBLIC_LIFECYCLES] as never[] } }),
@@ -36,6 +63,7 @@ export async function getPublicMarkets(
     include: {
       outcomes: { orderBy: { sortOrder: "asc" } },
       chartPoints: { orderBy: { sortOrder: "asc" } },
+      chainDeployments: true,
     },
     orderBy: { openAt: "desc" },
   });
@@ -53,6 +81,7 @@ export async function getTrendingMarkets(): Promise<UIMarket[]> {
     include: {
       outcomes: { orderBy: { sortOrder: "asc" } },
       chartPoints: { orderBy: { sortOrder: "asc" } },
+      chainDeployments: true,
     },
     orderBy: { volumeUsd: "desc" },
     take: 10,
@@ -67,6 +96,7 @@ export async function getTrendingMarkets(): Promise<UIMarket[]> {
       include: {
         outcomes: { orderBy: { sortOrder: "asc" } },
         chartPoints: { orderBy: { sortOrder: "asc" } },
+        chainDeployments: true,
       },
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -89,6 +119,7 @@ export async function getMarketBySlug(
     include: {
       outcomes: { orderBy: { sortOrder: "asc" } },
       chartPoints: { orderBy: { sortOrder: "asc" } },
+      chainDeployments: true,
     },
   });
 
@@ -117,6 +148,7 @@ export async function getMarketByIdOrSlug(
     include: {
       outcomes: { orderBy: { sortOrder: "asc" } },
       chartPoints: { orderBy: { sortOrder: "asc" } },
+      chainDeployments: true,
     },
   });
 
@@ -146,6 +178,7 @@ export async function getLiveMarkets(): Promise<UIMarket[]> {
     include: {
       outcomes: { orderBy: { sortOrder: "asc" } },
       chartPoints: { orderBy: { sortOrder: "asc" } },
+      chainDeployments: true,
     },
     orderBy: { volumeUsd: "desc" },
   });

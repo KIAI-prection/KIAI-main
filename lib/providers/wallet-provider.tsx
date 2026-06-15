@@ -17,8 +17,10 @@
 import { ReactNode } from "react";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
+import { injected } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SuiClientProvider, WalletProvider as SuiWalletProvider } from "@mysten/dapp-kit";
+import { DAppKitProvider } from "@mysten/dapp-kit-react";
+import { suiDAppKit } from "@/lib/providers/sui-dapp-kit";
 
 // ---------------------------------------------------------------------------
 // wagmi config — Base Sepolia testnet
@@ -26,37 +28,20 @@ import { SuiClientProvider, WalletProvider as SuiWalletProvider } from "@mysten/
 
 const wagmiConfig = createConfig({
   chains: [baseSepolia],
+  connectors: [injected()],
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),
   },
+  ssr: true,
 });
 
 const queryClient = new QueryClient();
-
-// ---------------------------------------------------------------------------
-// Sui network config — Testnet (hardcoded — getFullnodeUrl not available in this SDK version)
-// ---------------------------------------------------------------------------
-
-const suiNetworks = {
-  testnet: {
-    network: "testnet",
-    url: "https://fullnode.testnet.sui.io:443",
-  },
-} as const;
-
-// ---------------------------------------------------------------------------
-// Combined provider wrapper
-// ---------------------------------------------------------------------------
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <SuiClientProvider networks={suiNetworks} defaultNetwork="testnet">
-          <SuiWalletProvider autoConnect={false}>
-            {children}
-          </SuiWalletProvider>
-        </SuiClientProvider>
+        <DAppKitProvider dAppKit={suiDAppKit}>{children}</DAppKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

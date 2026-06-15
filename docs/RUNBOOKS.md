@@ -62,8 +62,9 @@ Rollback:
 2. Confirm `SUI_TESTNET_RPC_URL`, `SUI_TESTNET_GRAPHQL_URL`, `SUI_OPERATOR_PRIVATE_KEY`, `SUI_TESTNET_KIAI_VAULT_PACKAGE_ID`, `SUI_TESTNET_KIAI_VAULT_REGISTRY_ID`, and `SUI_TESTNET_KIAI_OPERATOR_CAP_ID`.
 3. Run Sui Move tests from `contracts/sui`.
 4. Publish or call only on Sui Testnet for Phase 1.
-5. Record package ID, registry object, operator cap, market object IDs, digest, and timestamp in `docs/DEPLOYMENTS.md`.
-6. Update `ChainDeployment` records and re-run `GET /api/admin/ops/status`.
+5. For backend market objects, run `pnpm deploy:sui-market <backend-market-id>`. The script signs `create_market`, waits for Sui visibility, extracts the shared `Market<USDC>` object ID, and writes it to `ChainDeployment.poolAddress`.
+6. Record package ID, registry object, operator cap, market object IDs, digest, and timestamp in `docs/DEPLOYMENTS.md`.
+7. Re-run `GET /api/admin/ops/status` and verify the Sui rail is `deployed` before demo trading.
 
 Rollback:
 

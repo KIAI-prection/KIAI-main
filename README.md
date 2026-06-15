@@ -297,6 +297,7 @@ One guarantee drives every design decision in KIAI's resolution layer: **no outc
 | 🔵 **Sui Testnet** | `kiai_vault` package | `0x1064637e...aa089` |
 | 🔵 **Sui Testnet** | Market registry | `0xa522ecb8...84754` |
 | 🔵 **Sui Testnet** | OperatorCap | `0x583b904c...93ace` |
+| 🔵 **Sui Testnet** | Nagoya Basho market object | [`0x3b9ba8a8...caa44`](https://suiscan.xyz/testnet/tx/5CCYuNr7JJZaTsHf3ETaARzhZKfvrDgjCirkvr9HSLKY) |
 | 🟡 **Base Sepolia** | `KIAIVault.sol` | [`0x3d1E1993...458A8`](https://sepolia.basescan.org/address/0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8) |
 
 > 📄 Full addresses + tx hashes → [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md)

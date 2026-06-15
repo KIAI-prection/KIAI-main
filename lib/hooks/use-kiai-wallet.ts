@@ -11,7 +11,7 @@
  */
 
 import { useAccount } from "wagmi";
-import { useCurrentAccount } from "@mysten/dapp-kit";
+import { useCurrentAccount } from "@mysten/dapp-kit-react";
 
 export interface KIAIWalletState {
   /** Currently selected chain */

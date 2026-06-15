@@ -80,28 +80,24 @@ contracts/broadcast/DeployKIAIVault.s.sol/84532/run-latest.json
 
 | Field | Value |
 |---|---|
-| **Market Object ID** | `0x09b7dccd64037e3c5fcef36dc43bd5f62fecfbe62f59a0431ec9c3b2a8205522` (Shared) |
+| **Current DB Market Object ID** | `0x3b9ba8a8f3f079ae74f98ba6ff5d4253ff2661df5854d92c065aac785d8caa44` (Shared) |
 | **Object type** | `kiai_vault::Market<...usdc::USDC>` |
-| **create_market digest** | `7oJwPTWTyYMchw6uvJddHctroNigXdnby9Xhtj28NNxo` |
-| **Epoch** | `1118` |
-| **Event** | `MarketCreatedEvent` — market_id_bytes = `Y21wd2E1bWJ5MDAwMHNqc21oYm52cXl1dA==` (base64 of `cmpwa5mby0000sjsmhbnvqyut`) |
-| **Gas cost** | `~3.37 MIST` |
-| **Status** | ✅ Created — Shared object, ready for user deposits |
+| **create_market digest** | `5CCYuNr7JJZaTsHf3ETaARzhZKfvrDgjCirkvr9HSLKY` |
+| **Operator** | `0x431247f9a7c7de5f39f6947bd8eb04939956265735623b84de3190a463caf1c1` |
+| **Backend market ID** | `cmpwa5mby0000sjsmhbnvqyut` |
+| **Recorded in DB** | `ChainDeployment(chain=SUI).deployStatus = deployed`, `contractAddress = package ID`, `poolAddress = Market Object ID` |
+| **Status** | ✅ Current Sui demo rail — Shared object, ready for user deposits |
 
-**Explorer:** https://suiscan.xyz/testnet/tx/7oJwPTWTyYMchw6uvJddHctroNigXdnby9Xhtj28NNxo
+**Explorer:** https://suiscan.xyz/testnet/tx/5CCYuNr7JJZaTsHf3ETaARzhZKfvrDgjCirkvr9HSLKY
+
+Historical Sui create_market record: object `0x09b7dccd64037e3c5fcef36dc43bd5f62fecfbe62f59a0431ec9c3b2a8205522`, digest `7oJwPTWTyYMchw6uvJddHctroNigXdnby9Xhtj28NNxo`, epoch `1118`. The current demo flow uses the DB-backed object above.
 
 **To create a market on Sui Testnet (template for future markets):**
 ```bash
-sui client call \
-  --package 0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089 \
-  --module kiai_vault \
-  --function create_market \
-  --type-args "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC" \
-  --args \
-    0x583b904cc0837d44b16d6dd17df133938c8d0202a75c9d73358c9b3d9b393ace \
-    "[<market_id_bytes_as_u8_array>]" \
-  --gas-budget 10000000
+pnpm deploy:sui-market <backend-market-id>
 ```
+
+The script signs `create_market` with `SUI_OPERATOR_PRIVATE_KEY`, waits for the Sui transaction, extracts the newly shared `Market<USDC>` object from transaction effects/object types, and records that real object ID into `ChainDeployment.poolAddress`.
 
 ---
 
@@ -138,6 +134,22 @@ Markets must be created on-chain via `createMarket(bytes32 marketId)` before use
 - Event: `MarketCreated(0x730339a5...)` — topic `0x08cb70e1...`
 - Gas used: `34,649` | Gas price: `0.006 gwei`
 - Status: `1 (success)` — ready for user deposits
+
+### kiai_vault @ Sui Testnet
+
+Markets must be created on-chain via `create_market<USDC>(OperatorCap, market_id_bytes)` before users can deposit.
+The backend stores the resulting shared `Market<USDC>` object ID in `ChainDeployment.poolAddress`.
+
+| Market | Backend ID | Sui Market Object | create_market digest | Status |
+|---|---|---|---|---|
+| Nagoya Basho 2026 | `cmpwa5mby0000sjsmhbnvqyut` | `0x3b9ba8a8f3f079ae74f98ba6ff5d4253ff2661df5854d92c065aac785d8caa44` | [`5CCYuNr7...`](https://suiscan.xyz/testnet/tx/5CCYuNr7JJZaTsHf3ETaARzhZKfvrDgjCirkvr9HSLKY) | ✅ Current DB-backed Sui rail — ready for wallet deposits |
+
+**create_market receipt (Nagoya Basho 2026):**
+- Digest: `5CCYuNr7JJZaTsHf3ETaARzhZKfvrDgjCirkvr9HSLKY`
+- Market object: `0x3b9ba8a8f3f079ae74f98ba6ff5d4253ff2661df5854d92c065aac785d8caa44`
+- Package: `0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089`
+- Operator: `0x431247f9a7c7de5f39f6947bd8eb04939956265735623b84de3190a463caf1c1`
+- Status: success — ready for user deposits through Slush/Sui wallet
 
 ---
 
@@ -190,3 +202,4 @@ Base/Sui/DeFi deployment guardrails, refreshed 2026-06-04:
 | 2026-06-02 | Sui Testnet | Initial publish | `0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089` | Phase 5 — kiai_vault v1 |
 | 2026-06-02 | Base Sepolia | createMarket (Nagoya Basho) | tx `0xe2d6bd6e...` block 42310207 | Phase 5 — first market vault created |
 | 2026-06-02 | Sui Testnet | create_market (Nagoya Basho) | digest `7oJwPTWT...` object `0x09b7dccd...` | Phase 5 — first market vault created |
+| 2026-06-13 | Sui Testnet | create_market (Nagoya Basho demo rail) | digest `5CCYuNr7...` object `0x3b9ba8a8...` | Current DB-backed Sui rail for Slush demo |

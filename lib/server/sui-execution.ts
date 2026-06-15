@@ -295,7 +295,6 @@ export async function cancelMarketOnSui(
  *
  * @param marketObjectId Sui object ID of the Market<USDC> shared object
  * @param outcomeSlug Human-readable outcome slug
- * @param usdcCoinObjectId The user's USDC coin object ID (from their wallet)
  * @param usdcAmount Exact USDC amount in base units (6 decimals)
  * @param shares LMSR shares from backend quote (scaled u64)
  * @param sender User's Sui address
@@ -303,7 +302,6 @@ export async function cancelMarketOnSui(
 export async function buildDepositTransaction(
   marketObjectId: string,
   outcomeSlug: string,
-  usdcCoinObjectId: string,
   usdcAmount: bigint,
   shares: bigint,
   sender: string
@@ -314,10 +312,12 @@ export async function buildDepositTransaction(
   const tx = new Transaction();
   tx.setSender(sender);
 
-  // Split the exact amount from the user's USDC coin
-  const [splitCoin] = tx.splitCoins(tx.object(usdcCoinObjectId), [
-    tx.pure(bcs.u64().serialize(usdcAmount)),
-  ]);
+  // Let the wallet/client resolve the user's USDC coins at signing time.
+  const usdcCoin = tx.coin({
+    type: USDC_TYPE,
+    balance: usdcAmount,
+    useGasCoin: false,
+  });
 
   tx.moveCall({
     target: `${SUI_PACKAGE_ID}::kiai_vault::deposit`,
@@ -326,12 +326,12 @@ export async function buildDepositTransaction(
       tx.object(marketObjectId),
       tx.pure(bcs.vector(bcs.u8()).serialize(Array.from(outcomeId))),
       tx.pure(bcs.vector(bcs.u8()).serialize(Array.from(outcomeSlugBytes))),
-      splitCoin,
+      usdcCoin,
       tx.pure(bcs.u64().serialize(shares)),
     ],
   });
 
-  return toBase64(await tx.build({ client: getSuiClient() }));
+  return tx.toJSON({ supportedIntents: ["CoinWithBalance"] });
 }
 
 // ---------------------------------------------------------------------------

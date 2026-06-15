@@ -192,6 +192,7 @@ export function lmsrMaxLoss(state: LmsrState): number {
 // ---------------------------------------------------------------------------
 
 import type {
+  ChainDeployment as PrismaChainDeployment,
   Market as PrismaMarket,
   Outcome as PrismaOutcome,
   MarketChartPoint as PrismaChartPoint,
@@ -210,10 +211,12 @@ export interface UIMarket {
   marketCount: number;
   contestants: UIContestant[];
   chartData: { time: string; value: number }[];
+  chainDeployments: UIChainDeployment[];
 }
 
 export interface UIContestant {
   id: string;
+  slug: string;
   name: string;
   flag?: string;
   chance: number;
@@ -224,10 +227,19 @@ export interface UIContestant {
   secondary?: string;
 }
 
+export interface UIChainDeployment {
+  chain: "BASE" | "SUI";
+  collateral: string;
+  deployStatus: string;
+  contractAddress: string | null;
+  poolAddress: string | null;
+}
+
 export function marketToUI(
   market: PrismaMarket & {
     outcomes: PrismaOutcome[];
     chartPoints: PrismaChartPoint[];
+    chainDeployments?: PrismaChainDeployment[];
   }
 ): UIMarket {
   const lifecycleToStatus = (
@@ -256,6 +268,7 @@ export function marketToUI(
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((o) => ({
         id: o.id,
+        slug: o.slug,
         name: o.name,
         flag: o.flag ?? undefined,
         chance: o.chance,
@@ -268,5 +281,12 @@ export function marketToUI(
     chartData: market.chartPoints
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((p) => ({ time: p.time, value: p.value })),
+    chainDeployments: (market.chainDeployments ?? []).map((deployment) => ({
+      chain: deployment.chain,
+      collateral: deployment.collateral,
+      deployStatus: deployment.deployStatus,
+      contractAddress: deployment.contractAddress,
+      poolAddress: deployment.poolAddress,
+    })),
   };
 }
