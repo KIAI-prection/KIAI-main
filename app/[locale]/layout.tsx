@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Noto_Sans_JP } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -22,15 +21,10 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  variable: "--font-noto-sans-jp",
-});
-
 export const metadata: Metadata = {
-  title: "KIAI - 日本初の総合予測市場プラットフォーム",
+  title: "KIAI - Prediction Market Platform",
   description:
-    "政治・経済・スポーツ・カルチャー・テクノロジーなど、あらゆる事象の結果をYes/No型契約として売買できる日本初の予測市場プラットフォーム",
+    "Trade yes/no contracts on politics, economics, sports, culture, technology, and other future events.",
   generator: "v0.app",
   icons: {
     icon: [
@@ -60,7 +54,7 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
 
-  if (!routing.locales.includes(locale as "ja" | "en")) {
+  if (!routing.locales.includes(locale as "en")) {
     notFound();
   }
 
@@ -70,7 +64,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} ${notoSansJP.variable} bg-background`}
+      className={`${geist.variable} ${geistMono.variable} bg-background`}
     >
       <body className="font-sans antialiased">
         <ThemeProvider

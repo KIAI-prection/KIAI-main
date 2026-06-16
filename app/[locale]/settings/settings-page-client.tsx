@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -13,15 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRouter, usePathname } from "@/i18n/navigation";
 import { useTheme } from "@/components/theme-provider";
-import { Globe, Sun, Bell, Shield, User } from "lucide-react";
+import { Sun, Bell, Shield, User } from "lucide-react";
 
 export function SettingsPageClient() {
   const t = useTranslations("settings");
-  const locale = useLocale();
-  const router = useRouter();
-  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
 
   const [notifications, setNotifications] = useState({
@@ -30,10 +26,6 @@ export function SettingsPageClient() {
     news: false,
     marketing: false,
   });
-
-  const handleLanguageChange = (newLocale: string) => {
-    router.replace(pathname, { locale: newLocale });
-  };
 
   return (
     <div className="container max-w-2xl mx-auto py-6">
@@ -45,31 +37,6 @@ export function SettingsPageClient() {
       </div>
 
       <div className="space-y-6">
-        {/* Language Settings */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Globe className="h-5 w-5 text-brand" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {t("language.title")}
-            </h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="language">{t("language.select")}</Label>
-              <Select value={locale} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ja">日本語</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </Card>
-
         {/* Theme Settings */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">

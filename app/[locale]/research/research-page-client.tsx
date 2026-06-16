@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { mockArticles } from "@/lib/mock-data";
@@ -8,7 +8,6 @@ import { Clock, User, BookOpen } from "lucide-react";
 
 export function ResearchPageClient() {
   const t = useTranslations("research");
-  const locale = useLocale();
 
   return (
     <div className="container max-w-4xl mx-auto py-6">
@@ -39,11 +38,11 @@ export function ResearchPageClient() {
             </div>
 
             <h2 className="text-xl font-semibold text-foreground group-hover:text-brand transition-colors mb-2">
-              {locale === "ja" ? article.title.ja : article.title.en}
+              {article.title.en}
             </h2>
 
             <p className="text-muted-foreground mb-4">
-              {locale === "ja" ? article.excerpt.ja : article.excerpt.en}
+              {article.excerpt.en}
             </p>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

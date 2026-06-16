@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Trophy, Vote, Tv } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LiveBadge } from "./live-badge";
 import { MarketChart } from "./market-chart";
@@ -36,7 +36,6 @@ const featuredCollections = [
 
 export function TrendingHero() {
   const t = useTranslations("home");
-  const locale = useLocale() as "en" | "ja";
   const featuredMarket = mockMarkets[0];
   const featuredSeries = featuredMarket.contestants.slice(0, 3).map((contestant, index) => ({
     name: contestant.name,
@@ -63,20 +62,20 @@ export function TrendingHero() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="uppercase text-xs font-medium">
-                {featuredMarket.categoryLabel[locale]}
+                {featuredMarket.categoryLabel.en}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                {featuredMarket.subtitle[locale]}
+                {featuredMarket.subtitle.en}
               </span>
             </div>
             {featuredMarket.status === "live" && (
-              <LiveBadge info={featuredMarket.statusInfo?.[locale]} />
+              <LiveBadge info={featuredMarket.statusInfo?.en} />
             )}
           </div>
 
           <Link href={`/markets/${featuredMarket.id}`}>
             <h2 className="text-2xl font-semibold text-foreground mb-4 hover:text-brand transition-colors">
-              {featuredMarket.title[locale]}
+              {featuredMarket.title.en}
             </h2>
           </Link>
 

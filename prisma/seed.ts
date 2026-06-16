@@ -199,7 +199,7 @@ async function seed() {
       data: {
         lifecycle: "ARCHIVED",
         statusInfoEn: "Superseded by Phase 9 catalogue refresh on 2026-06-05.",
-        statusInfoJa: "2026-06-05 のフェーズ9カタログ更新によりアーカイブ済み。",
+        statusInfoJa: "Superseded by Phase 9 catalogue refresh on 2026-06-05.",
       },
     });
 

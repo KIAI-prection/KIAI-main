@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,12 +18,8 @@ export function ContestantRow({
   onSelect,
 }: ContestantRowProps) {
   const t = useTranslations("market");
-  const locale = useLocale();
 
   const formatPrice = (price: number) => {
-    if (locale === "ja") {
-      return `${price}¢`;
-    }
     return `${price}¢`;
   };
 

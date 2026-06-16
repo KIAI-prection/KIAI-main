@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { BarChart3, ChevronDown, Loader2 } from "lucide-react";
+import { BarChart3, Loader2 } from "lucide-react";
 import { baseSepolia } from "wagmi/chains";
 import { useAccount, useConfig, useConnect, useSwitchChain } from "wagmi";
 import {
@@ -16,12 +16,6 @@ import type { Address } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useKIAIWallet } from "@/lib/hooks/use-kiai-wallet";
 import type { UIMarket, UIContestant } from "@/lib/domain/market-service";
@@ -36,7 +30,6 @@ import {
 interface TradePanelProps {
   market: UIMarket;
   selectedContestant: UIContestant | null;
-  locale: string;
 }
 
 interface QuoteResult {
@@ -86,16 +79,13 @@ async function getBaseUsdcAddress(): Promise<Address> {
   return (base?.collateral.address ?? BASE_USDC_FALLBACK) as Address;
 }
 
-export function TradePanel({ market, selectedContestant, locale }: TradePanelProps) {
+export function TradePanel({ market, selectedContestant }: TradePanelProps) {
   const t = useTranslations("trade");
   const tMarket = useTranslations("market");
   const [tradeType, setTradeType] = useState<"buy" | "sell">("buy");
   const [position, setPosition] = useState<"yes" | "no">("yes");
   const [activeChain, setActiveChain] = useState<Chain>("BASE");
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<"jpy" | "usd">(
-    locale === "ja" ? "jpy" : "usd"
-  );
   const [quote, setQuote] = useState<QuoteResult | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -423,9 +413,6 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
   const profit = estimatedReturn - numAmount;
 
   const formatCurrency = (value: number) => {
-    if (currency === "jpy") {
-      return "¥" + value.toLocaleString();
-    }
     return "$" + value.toFixed(2);
   };
 
@@ -442,7 +429,7 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
         <BarChart3 className="h-4 w-4 text-foreground-muted" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
-            {market.title[locale as "ja" | "en"]}
+            {market.title.en}
           </p>
         </div>
       </div>
@@ -511,22 +498,9 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
             </button>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                {currency === "jpy" ? "¥" : "$"}
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setCurrency("jpy")}>
-                ¥ JPY
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCurrency("usd")}>
-                $ USD
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" size="sm" disabled>
+            $ USD
+          </Button>
         </div>
       </div>
 
@@ -596,7 +570,7 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
         </label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted">
-            {currency === "jpy" ? "¥" : "$"}
+            $
           </span>
           <Input
             type="number"
@@ -615,7 +589,7 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
               onClick={() => setAmount(String(value))}
               className="flex-1 rounded-lg border border-border py-1 text-xs font-medium text-foreground-secondary hover:bg-muted"
             >
-              {currency === "jpy" ? "¥" + value : "$" + value}
+              {"$" + value}
             </button>
           ))}
         </div>

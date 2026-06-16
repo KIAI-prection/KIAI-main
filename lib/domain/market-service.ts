@@ -201,12 +201,12 @@ import type {
 /** Wire shape the frozen UI expects for a market list card. */
 export interface UIMarket {
   id: string;
-  title: { en: string; ja: string };
-  subtitle: { en: string; ja: string };
+  title: { en: string };
+  subtitle: { en: string };
   category: string;
-  categoryLabel: { en: string; ja: string };
+  categoryLabel: { en: string };
   status: "live" | "upcoming" | "closed";
-  statusInfo?: { en: string; ja: string };
+  statusInfo?: { en: string };
   volume: number;
   marketCount: number;
   contestants: UIContestant[];
@@ -253,14 +253,14 @@ export function marketToUI(
 
   return {
     id: market.id,
-    title: { en: market.titleEn, ja: market.titleJa },
-    subtitle: { en: market.subtitleEn, ja: market.subtitleJa },
+    title: { en: market.titleEn },
+    subtitle: { en: market.subtitleEn },
     category: market.category,
-    categoryLabel: { en: market.categoryLabelEn, ja: market.categoryLabelJa },
+    categoryLabel: { en: market.categoryLabelEn },
     status: lifecycleToStatus(market.lifecycle),
     statusInfo:
       market.statusInfoEn
-        ? { en: market.statusInfoEn, ja: market.statusInfoJa ?? "" }
+        ? { en: market.statusInfoEn }
         : undefined,
     volume: Number(market.volumeUsd),
     marketCount: market.marketCount,

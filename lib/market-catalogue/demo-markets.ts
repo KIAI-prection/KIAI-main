@@ -77,12 +77,12 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "nagoya-basho-2026-winner",
     titleEn: "Nagoya Basho 2026 — Tournament Winner",
-    titleJa: "名古屋場所2026 — 優勝力士",
+    titleJa: "Nagoya Basho 2026 — Tournament Winner",
     subtitleEn: "Who will win the July Grand Sumo Tournament?",
-    subtitleJa: "7月の大相撲名古屋場所で誰が優勝するか？",
+    subtitleJa: "Who will win the July Grand Sumo Tournament?",
     category: "sports",
     categoryLabelEn: "Sumo",
-    categoryLabelJa: "相撲",
+    categoryLabelJa: "Sumo",
     closeAt: new Date("2026-07-26T10:00:00Z"),
     lmsrB: 200,
     outcomes: [
@@ -106,12 +106,12 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "yokozuna-terunofuji-nagoya-2026-record",
     titleEn: "Terunofuji — Nagoya 2026 Final Record",
-    titleJa: "照ノ富士 — 名古屋2026最終成績",
+    titleJa: "Terunofuji — Nagoya 2026 Final Record",
     subtitleEn: "Will Terunofuji finish with 13+ wins?",
-    subtitleJa: "照ノ富士は13勝以上で終えるか？",
+    subtitleJa: "Will Terunofuji finish with 13+ wins?",
     category: "sports",
     categoryLabelEn: "Sumo",
-    categoryLabelJa: "相撲",
+    categoryLabelJa: "Sumo",
     closeAt: new Date("2026-07-26T10:00:00Z"),
     lmsrB: 100,
     outcomes: [
@@ -133,12 +133,12 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "summer-koshien-2026-winner",
     titleEn: "Summer Koshien 2026 — National Champion",
-    titleJa: "夏の甲子園2026 — 優勝校",
+    titleJa: "Summer Koshien 2026 — National Champion",
     subtitleEn: "Which high school will win the 108th National High School Baseball Tournament?",
-    subtitleJa: "第108回全国高等学校野球選手権大会で優勝する学校は？",
+    subtitleJa: "Which high school will win the 108th National High School Baseball Tournament?",
     category: "sports",
     categoryLabelEn: "Koshien",
-    categoryLabelJa: "甲子園",
+    categoryLabelJa: "Koshien",
     closeAt: new Date("2026-08-25T12:00:00Z"),
     lmsrB: 150,
     outcomes: [
@@ -162,12 +162,12 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "npb-central-league-pennant-2026",
     titleEn: "NPB 2026 — Central League Pennant Winner",
-    titleJa: "プロ野球2026 — セントラル・リーグ優勝",
+    titleJa: "NPB 2026 — Central League Pennant Winner",
     subtitleEn: "Which team will win the 2026 Central League pennant?",
-    subtitleJa: "2026年のセ・リーグを制するチームは？",
+    subtitleJa: "Which team will win the 2026 Central League pennant?",
     category: "sports",
     categoryLabelEn: "NPB",
-    categoryLabelJa: "プロ野球",
+    categoryLabelJa: "NPB",
     closeAt: new Date("2026-10-05T10:00:00Z"),
     lmsrB: 300,
     outcomes: [
@@ -193,13 +193,14 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "japan-house-councillors-2028-coalition-majority",
     titleEn: "2028 Japan Upper House — LDP + Komeito Coalition Majority?",
-    titleJa: "2028年参院選 — 自公連立、過半数獲得か？",
+    titleJa: "2028 Japan Upper House — LDP + Komeito Coalition Majority?",
     subtitleEn:
       "Will the LDP–Komeito coalition hold a House of Councillors majority after the 2028 election result?",
-    subtitleJa: "2028年参院選後、自民・公明の連立与党は参院で過半数を維持するか？",
+    subtitleJa:
+      "Will the LDP–Komeito coalition hold a House of Councillors majority after the 2028 election result?",
     category: "politics",
     categoryLabelEn: "Politics",
-    categoryLabelJa: "政治",
+    categoryLabelJa: "Politics",
     closeAt: new Date("2028-07-31T00:00:00Z"),
     lmsrB: 250,
     outcomes: [
@@ -223,14 +224,14 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "thailand-u19-vs-australia-u19-asean-2026",
     titleEn: "Thailand U19 vs Australia U19 — ASEAN Championship",
-    titleJa: "タイU19 vs オーストラリアU19 — ASEAN選手権",
+    titleJa: "Thailand U19 vs Australia U19 — ASEAN Championship",
     subtitleEn:
       "Live API-FOOTBALL demo market for fixture 1553093 in the ASEAN Championship U19.",
     subtitleJa:
-      "API-FOOTBALL fixture 1553093 を使う ASEAN U19 選手権のライブデモ市場",
+      "Live API-FOOTBALL demo market for fixture 1553093 in the ASEAN Championship U19.",
     category: "sports",
     categoryLabelEn: "Football",
-    categoryLabelJa: "サッカー",
+    categoryLabelJa: "Football",
     closeAt: new Date("2026-06-13T13:15:00Z"),
     lmsrB: 200,
     outcomes: [
@@ -255,9 +256,9 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "f1-abu-dhabi-gp-2026-winner",
     titleEn: "F1 2026 — Abu Dhabi Grand Prix Winner",
-    titleJa: "F1 2026 — アブダビGP 優勝ドライバー",
+    titleJa: "F1 2026 — Abu Dhabi Grand Prix Winner",
     subtitleEn: "Who will win the Formula 1 Abu Dhabi Grand Prix at Yas Marina?",
-    subtitleJa: "ヤス・マリーナで開催されるF1アブダビGPで優勝するのは誰か？",
+    subtitleJa: "Who will win the Formula 1 Abu Dhabi Grand Prix at Yas Marina?",
     category: "sports",
     categoryLabelEn: "F1",
     categoryLabelJa: "F1",
@@ -286,13 +287,14 @@ export const DEMO_MARKETS: DemoMarket[] = [
   withPolicy({
     slug: "akutagawa-prize-2026-second-half",
     titleEn: "Akutagawa Prize 2026 (2nd Half) — Will a debut author win?",
-    titleJa: "第176回芥川賞 — 新人作家が受賞するか？",
+    titleJa: "Akutagawa Prize 2026 (2nd Half) — Will a debut author win?",
     subtitleEn:
       "Will the second-half 2026 Akutagawa Prize go to a debut author (first novel)?",
-    subtitleJa: "2026年下半期の芥川賞は、デビュー作家（初小説）に贈られるか？",
+    subtitleJa:
+      "Will the second-half 2026 Akutagawa Prize go to a debut author (first novel)?",
     category: "culture",
     categoryLabelEn: "Culture",
-    categoryLabelJa: "文化",
+    categoryLabelJa: "Culture",
     closeAt: new Date("2027-01-20T10:00:00Z"),
     lmsrB: 100,
     outcomes: [

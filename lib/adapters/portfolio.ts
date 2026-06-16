@@ -50,7 +50,6 @@ export async function getPortfolioForWallet(
       select: {
         id: true,
         titleEn: true,
-        titleJa: true,
         outcomes: { select: { slug: true, priceYes: true, priceNo: true } },
       },
     }),
@@ -86,7 +85,6 @@ export async function getPortfolioForWallet(
       marketId: p.marketId,
       marketTitle: {
         en: market?.titleEn ?? "Unknown Market",
-        ja: market?.titleJa ?? "",
       },
       type: p.side as "yes" | "no",
       candidate: p.outcomeSlug,

@@ -20,7 +20,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LanguageSwitcher } from "./language-switcher";
 import { WalletConnect } from "@/components/wallet-connect";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
@@ -71,9 +70,6 @@ export function Header() {
             KIAI
           </span>
           <span className="text-xl font-bold text-primary">!</span>
-          <span className="ml-1 text-xs font-medium text-foreground-muted">
-            気合
-          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -98,9 +94,7 @@ export function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem asChild>
-                      <Link href="/trust">
-                        {locale === "ja" ? "信頼性について" : "About Trust"}
-                      </Link>
+                      <Link href="/trust">About Trust</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/trust/faq">FAQ</Link>
@@ -148,8 +142,6 @@ export function Header() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          
           <Dialog>
             <DialogTrigger asChild>
               <Button className="hidden bg-primary text-primary-foreground hover:bg-primary-hover sm:flex">

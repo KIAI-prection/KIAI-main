@@ -8,7 +8,7 @@ interface MarketDetailPageProps {
 }
 
 export default async function MarketDetailPage({ params }: MarketDetailPageProps) {
-  const { id, locale } = await params;
+  const { id } = await params;
   const market = await getMarketByIdOrSlug(id);
 
   if (!market) {
@@ -17,5 +17,5 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
 
   await getTranslations("market");
 
-  return <MarketDetailClient market={market} locale={locale} />;
+  return <MarketDetailClient market={market} />;
 }

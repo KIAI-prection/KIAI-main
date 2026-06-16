@@ -144,7 +144,7 @@ Full lifecycle control. Every action authenticated, logged, queryable.
 | 👛 **Wallet-native** | `@mysten/dapp-kit` for Sui · wagmi for EVM — both wired to the same trade flow |
 | 🔍 **State honesty** | No optimistic confirms — waits for wallet · backend · chain · reconciler |
 | 🎞️ **Framer Motion** | Fluid, polished transitions throughout |
-| 🌐 **i18n** | `next-intl` — Japan-first locale, globally extensible |
+| 🌐 **Routing** | `next-intl` — English-only product routes |
 | 📱 **Responsive** | Tailwind CSS 4 + Radix UI · every screen size |
 
 ### 🏗️ Engineering Foundation
@@ -246,7 +246,7 @@ One guarantee drives every design decision in KIAI's resolution layer: **no outc
 | 🟡 **Base** | Solidity 0.8.24 · Foundry · OpenZeppelin · viem |
 | 👛 **Wallets** | `@mysten/dapp-kit` · Wallet Standard · wagmi |
 | 📐 **Pricing** | LMSR backend AMM |
-| 🌐 **i18n** | next-intl |
+| 🌐 **Routing** | next-intl |
 | 🧪 **Testing** | tsx · Foundry · Sui Move test |
 | 🔍 **Quality** | ESLint 9 · TypeScript strict |
 
@@ -399,7 +399,7 @@ KIAI/
 │   └── 🔧 server/           # Chain execution · reconciler · auth · ops
 ├── 🗄️  prisma/              # Schema · migrations · seed data
 ├── 🧪 tests/                # 12-suite TypeScript validation scripts
-└── 🌐 messages/             # i18n locale files
+└── 🌐 messages/             # English product copy
 ```
 
 ---
