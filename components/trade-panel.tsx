@@ -12,6 +12,8 @@ import {
   writeContract,
 } from "@wagmi/core";
 import { useDAppKit } from "@mysten/dapp-kit-react";
+import { bcs } from "@mysten/sui/bcs";
+import { Transaction } from "@mysten/sui/transactions";
 import type { Address } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,6 +43,44 @@ interface QuoteResult {
   yesProbAfter: number;
   noProbAfter: number;
   expiresAt: string;
+}
+
+type SuiDepositTransactionPayload = {
+  kind: "sui_deposit";
+  packageId: string;
+  usdcType: string;
+  marketObjectId: string;
+  outcomeSlug: string;
+  outcomeIdBytes: number[];
+  outcomeSlugBytes: number[];
+  usdcAmount: string;
+  shares: string;
+  sender: string;
+};
+
+function buildSuiDepositTransaction(payload: SuiDepositTransactionPayload) {
+  const tx = new Transaction();
+  tx.setSender(payload.sender);
+
+  const usdcCoin = tx.coin({
+    type: payload.usdcType,
+    balance: BigInt(payload.usdcAmount),
+    useGasCoin: false,
+  });
+
+  tx.moveCall({
+    target: payload.packageId + "::kiai_vault::deposit",
+    typeArguments: [payload.usdcType],
+    arguments: [
+      tx.object(payload.marketObjectId),
+      tx.pure(bcs.vector(bcs.u8()).serialize(payload.outcomeIdBytes)),
+      tx.pure(bcs.vector(bcs.u8()).serialize(payload.outcomeSlugBytes)),
+      usdcCoin,
+      tx.pure.u64(BigInt(payload.shares)),
+    ],
+  });
+
+  return tx;
 }
 
 interface OrderResult {
@@ -309,7 +349,7 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
     try {
       setPanelStatus("Preparing Sui transaction...");
       const prep = await parseApiResponse<{
-        transaction: string;
+        transactionPayload: SuiDepositTransactionPayload;
         order: { id: string; status: string };
       }>(
         await fetch("/api/orders/" + order.id + "/sui-deposit-transaction", {
@@ -321,7 +361,7 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
 
       setPanelStatus("Confirm the Sui transaction in your wallet...");
       const result = await dAppKit.signAndExecuteTransaction({
-        transaction: prep.transaction,
+        transaction: buildSuiDepositTransaction(prep.transactionPayload),
       });
 
       if (result.$kind === "FailedTransaction") {

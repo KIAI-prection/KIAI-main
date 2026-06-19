@@ -1,4 +1,5 @@
 import { sharesToSuiUnits, usdToUsdcUnits } from "@/lib/domain/trade-units";
+import type { SuiDepositTransactionPayload } from "@/lib/server/sui-execution";
 
 type PrepOutcome = {
   id: string;
@@ -35,7 +36,7 @@ export type SuiDepositPrepResult =
       ok: true;
       status: 200;
       body: {
-        transaction: string;
+        transactionPayload: SuiDepositTransactionPayload;
         order: { id: string; status: string };
         units: { usdcAmount: string; shares: string };
       };
@@ -55,13 +56,13 @@ export async function prepareSuiDepositTransaction(
   deps: {
     findOrder: (id: string) => Promise<SuiDepositPrepOrder | null>;
     markWalletPending: (id: string) => Promise<{ id: string; status: string }>;
-    buildTransaction: (
+    buildTransactionPayload: (
       marketObjectId: string,
       outcomeSlug: string,
       usdcAmount: bigint,
       shares: bigint,
       sender: string
-    ) => Promise<string>;
+    ) => Promise<SuiDepositTransactionPayload>;
   }
 ): Promise<SuiDepositPrepResult> {
   const rawWalletAddress = input.walletAddress?.trim();
@@ -156,7 +157,7 @@ export async function prepareSuiDepositTransaction(
 
   const usdcAmount = usdToUsdcUnits(Number(order.quote.totalCostUsd));
   const shares = sharesToSuiUnits(Number(order.quote.sharesOut));
-  const transaction = await deps.buildTransaction(
+  const transactionPayload = await deps.buildTransactionPayload(
     deployment.poolAddress,
     outcome.slug,
     usdcAmount,
@@ -169,7 +170,7 @@ export async function prepareSuiDepositTransaction(
     ok: true,
     status: 200,
     body: {
-      transaction,
+      transactionPayload,
       order: { id: updated.id, status: updated.status },
       units: { usdcAmount: usdcAmount.toString(), shares: shares.toString() },
     },

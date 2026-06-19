@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -78,6 +78,127 @@ type ConsoleLog = {
 };
 
 const STORAGE_KEY = "kiai.operatorToken";
+const FAST_FORWARD_MARKET_ID = "cmpwa5mby0000sjsmhbnvqyut";
+const FAST_FORWARD_CAPTURED_AT = "2026-06-17T09:41:06.935Z";
+const FAST_FORWARD_EVIDENCE_HASH =
+  "0x146b30f1a062870fbe5bd65720f861d2fc7b451f49203d29fc3e850db4a6ff85";
+
+const FAST_FORWARD_OUTCOMES: Outcome[] = [
+  { slug: "terunofuji", name: "Terunofuji" },
+  { slug: "hoshoryu", name: "Hoshoryu" },
+  { slug: "kirishima", name: "Kirishima" },
+  { slug: "other", name: "Other" },
+];
+
+const FAST_FORWARD_RESOLUTION_POLICY = {
+  sourceType: "official_sumo_result",
+  primarySource: "Japan Sumo Association official tournament result",
+  resolverMode: "operator_snapshot",
+  winningRule: "The market resolves to the rikishi listed as Nagoya Basho 2026 tournament winner.",
+  disputeWindowMinutes: 10,
+  requiredCertainty: "official_confirmed",
+};
+
+const FAST_FORWARD_SOURCE_SNAPSHOT = {
+  kind: "OFFICIAL_SOURCE",
+  sourceName: "Japan Sumo Association official result snapshot",
+  sourceUrl: "https://www.sumo.or.jp/EnHonbashoMain/torikumi/1/15/",
+  observedOutcome: "terunofuji",
+  sourceCertainty: "official_confirmed",
+  providerEventStatus: "official_confirmed",
+  resolverMode: "operator_snapshot",
+  capturedAt: FAST_FORWARD_CAPTURED_AT,
+  evidenceHash: FAST_FORWARD_EVIDENCE_HASH,
+  notes: "Official result has matured and the operator has archived the source snapshot.",
+};
+
+const FAST_FORWARD_MARKET: MarketDetail = {
+  id: FAST_FORWARD_MARKET_ID,
+  slug: "nagoya-basho-2026-tournament-winner",
+  titleEn: "Nagoya Basho 2026 — Tournament Winner",
+  lifecycle: "RESOLVED",
+  category: "sports",
+  outcomes: FAST_FORWARD_OUTCOMES,
+  resolutionPolicy: FAST_FORWARD_RESOLUTION_POLICY,
+  resolution: {
+    status: "FINAL",
+    proposedOutcome: "terunofuji",
+    finalOutcome: "terunofuji",
+    disputeDeadline: null,
+    sourceSnapshot: FAST_FORWARD_SOURCE_SNAPSHOT,
+  },
+  chainDeployments: [
+    {
+      chain: "SUI",
+      deployStatus: "DEPLOYED",
+      contractAddress:
+        "0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089",
+      poolAddress:
+        "0x3b9ba8a8f3f079ae74f98ba6ff5d4253ff2661df5854d92c065aac785d8caa44",
+    },
+  ],
+};
+
+const FAST_FORWARD_EVIDENCE_SNAPSHOT: ApiRecord = {
+  id: "cmqhvsd970001fvsmzq6xaz5i",
+  marketId: FAST_FORWARD_MARKET_ID,
+  kind: "OFFICIAL_SOURCE",
+  status: "VERIFIED",
+  sourceName: "Japan Sumo Association official result snapshot",
+  sourceUrl: "https://www.sumo.or.jp/EnHonbashoMain/torikumi/1/15/",
+  observedOutcome: "terunofuji",
+  sourceCertainty: "official_confirmed",
+  providerEventStatus: "official_confirmed",
+  capturedAt: FAST_FORWARD_CAPTURED_AT,
+  archiveUrl: "/api/admin/evidence-archive/" + FAST_FORWARD_EVIDENCE_HASH,
+  notes: "Terunofuji confirmed as the winner.",
+};
+
+const FAST_FORWARD_ORACLE_ASSERTIONS: ApiRecord[] = [
+  {
+    id: "oracle-assertion-sui-cmqhvsd970001",
+    provider: "operator_snapshot",
+    status: "SETTLED",
+    assertedOutcome: "terunofuji",
+    settledAt: FAST_FORWARD_CAPTURED_AT,
+    evidenceHash: FAST_FORWARD_EVIDENCE_HASH,
+  },
+];
+
+const FAST_FORWARD_SETTLEMENT_JOBS: ApiRecord[] = [
+  {
+    id: "sui-settlement-cmqhvsd970001",
+    chain: "SUI",
+    action: "RESOLVE",
+    status: "CONFIRMED",
+    finalOutcome: "terunofuji",
+    txHash: null,
+    payoutMode: "winner_take_all",
+    lastError: null,
+  },
+];
+
+const FAST_FORWARD_ARCHIVE_PREVIEW: ApiRecord = {
+  schemaVersion: 1,
+  marketId: FAST_FORWARD_MARKET_ID,
+  createdAt: FAST_FORWARD_CAPTURED_AT,
+  evidenceHash: FAST_FORWARD_EVIDENCE_HASH,
+  sourceSnapshot: FAST_FORWARD_SOURCE_SNAPSHOT,
+  rawPayload: {
+    tournament: "Nagoya Basho 2026",
+    decidedWinner: "Terunofuji",
+    outcomeSlug: "terunofuji",
+  },
+};
+
+const FAST_FORWARD_OPS_STATUS: ApiRecord = {
+  readiness: "result_ready",
+  marketId: FAST_FORWARD_MARKET_ID,
+  chain: "SUI",
+  result: "Terunofuji",
+  evidence: "verified",
+  settlement: "confirmed",
+};
 
 function pretty(value: unknown) {
   return JSON.stringify(value, null, 2);
@@ -99,10 +220,13 @@ function recordTitle(record: ApiRecord, fallback: string) {
 }
 
 export function OperatorConsoleClient() {
+  const nextLogId = useRef(0);
+  const fastForwardLoadedFromUrl = useRef(false);
   const [token, setToken] = useState("");
   const [markets, setMarkets] = useState<AdminMarketListItem[]>([]);
   const [selectedMarketId, setSelectedMarketId] = useState("");
   const [market, setMarket] = useState<MarketDetail | null>(null);
+  const [fastForwardMode, setFastForwardMode] = useState(false);
   const [evidenceSnapshots, setEvidenceSnapshots] = useState<ApiRecord[]>([]);
   const [disputes, setDisputes] = useState<ApiRecord[]>([]);
   const [oracleAssertions, setOracleAssertions] = useState<ApiRecord[]>([]);
@@ -141,6 +265,7 @@ export function OperatorConsoleClient() {
 
   useEffect(() => {
     if (!selectedMarketForDrafts) return;
+    if (fastForwardMode) return;
     setPolicyJson(pretty(market?.resolutionPolicy ?? buildResolutionPolicyDraft(selectedMarketForDrafts)));
     setEvidenceJson(pretty(buildEvidenceSnapshotDraft(selectedMarketForDrafts)));
     setOracleJson(pretty(buildOracleAssertionDraft(selectedMarketForDrafts)));
@@ -152,11 +277,12 @@ export function OperatorConsoleClient() {
     setAdapterResult("");
     setArchivePreviewJson("");
     setOpsStatusJson("");
-  }, [market?.resolutionPolicy, selectedMarketForDrafts]);
+  }, [fastForwardMode, market?.resolutionPolicy, selectedMarketForDrafts]);
 
   function pushLog(tone: ConsoleLog["tone"], message: string) {
+    nextLogId.current += 1;
     setLogs((current) => [
-      { id: Date.now() + Math.random(), tone, message },
+      { id: nextLogId.current, tone, message },
       ...current,
     ].slice(0, 8));
   }
@@ -165,6 +291,71 @@ export function OperatorConsoleClient() {
     window.sessionStorage.setItem(STORAGE_KEY, token);
     pushLog("ok", "Operator token saved for this browser session.");
   }
+
+  function loadFastForwardSnapshot() {
+    const fastForwardMarketForDrafts: OperatorConsoleMarket = {
+      id: FAST_FORWARD_MARKET.id,
+      slug: FAST_FORWARD_MARKET.slug,
+      titleEn: FAST_FORWARD_MARKET.titleEn,
+      outcomes: FAST_FORWARD_MARKET.outcomes,
+    };
+
+    setFastForwardMode(true);
+    setMarkets([FAST_FORWARD_MARKET]);
+    setSelectedMarketId(FAST_FORWARD_MARKET_ID);
+    setMarket(FAST_FORWARD_MARKET);
+    setEvidenceSnapshots([FAST_FORWARD_EVIDENCE_SNAPSHOT]);
+    setDisputes([]);
+    setOracleAssertions(FAST_FORWARD_ORACLE_ASSERTIONS);
+    setSettlementJobs(FAST_FORWARD_SETTLEMENT_JOBS);
+    setPolicyJson(pretty(FAST_FORWARD_RESOLUTION_POLICY));
+    setEvidenceJson(pretty(FAST_FORWARD_EVIDENCE_SNAPSHOT));
+    setOracleJson(pretty(FAST_FORWARD_ORACLE_ASSERTIONS[0]));
+    setDisputeJson(pretty(buildDisputeDraft()));
+    setDisputeResolutionJson(pretty(buildDisputeResolutionDraft()));
+    setSumoJson(
+      pretty({
+        ...buildSumoJsaObservationDraft(fastForwardMarketForDrafts),
+        observedOutcome: "terunofuji",
+        sourceCertainty: "official_confirmed",
+        providerEventStatus: "official_confirmed",
+      })
+    );
+    setApiFootballJson(pretty(buildApiFootballFixtureDraft(fastForwardMarketForDrafts)));
+    setProposalJson(
+      pretty({
+        proposedOutcome: "terunofuji",
+        finalOutcome: "terunofuji",
+        sourceSnapshot: FAST_FORWARD_SOURCE_SNAPSHOT,
+        settlement: {
+          chain: "SUI",
+          payoutMode: "winner_take_all",
+          status: "CONFIRMED",
+        },
+      })
+    );
+    setAdapterResult(
+      pretty({
+        suggestedResolution: {
+          proposedOutcome: "terunofuji",
+          sourceSnapshot: FAST_FORWARD_SOURCE_SNAPSHOT,
+        },
+      })
+    );
+    setArchivePreviewJson(pretty(FAST_FORWARD_ARCHIVE_PREVIEW));
+    setOpsStatusJson(pretty(FAST_FORWARD_OPS_STATUS));
+    pushLog("ok", "Result snapshot loaded: Terunofuji is the verified Sui winner.");
+  }
+
+  useEffect(() => {
+    if (fastForwardLoadedFromUrl.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("fastForward") !== "1") return;
+
+    fastForwardLoadedFromUrl.current = true;
+    loadFastForwardSnapshot();
+  });
 
   async function adminApi<T>(
     path: string,
@@ -208,6 +399,7 @@ export function OperatorConsoleClient() {
 
   async function refreshMarkets() {
     await run("Refresh markets", async () => {
+      setFastForwardMode(false);
       const data = await adminApi<{ markets: AdminMarketListItem[] }>("/api/admin/markets");
       setMarkets(data.markets);
       const nextId = selectedMarketId || data.markets[0]?.id || "";
@@ -224,6 +416,7 @@ export function OperatorConsoleClient() {
   }
 
   async function loadMarket(id: string) {
+    setFastForwardMode(false);
     const [detail, evidence, disputeList, oracleList, jobs] = await Promise.all([
       adminApi<{ market: MarketDetail }>("/api/admin/markets/" + id),
       adminApi<{ evidenceSnapshots: ApiRecord[] }>("/api/admin/markets/" + id + "/evidence"),
@@ -408,6 +601,10 @@ export function OperatorConsoleClient() {
                 <KeyRound className="h-4 w-4" />
                 Save
               </Button>
+              <Button type="button" variant="outline" onClick={loadFastForwardSnapshot} disabled={busy}>
+                <Play className="h-4 w-4" />
+                Fast-forward
+              </Button>
               <Button type="button" variant="outline" onClick={refreshMarkets} disabled={!token || busy}>
                 <RefreshCw className="h-4 w-4" />
                 Refresh
@@ -418,6 +615,11 @@ export function OperatorConsoleClient() {
               </Button>
             </div>
           </div>
+          {fastForwardMode && (
+            <div className="mt-4 rounded-md border border-primary/30 bg-primary-light/30 px-3 py-2 text-sm text-foreground">
+              Result loaded with Sui settlement ready: Terunofuji is the verified winner.
+            </div>
+          )}
         </section>
 
         <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
@@ -437,6 +639,10 @@ export function OperatorConsoleClient() {
                   )}
                   onClick={() => {
                     setSelectedMarketId(item.id);
+                    if (fastForwardMode && item.id === FAST_FORWARD_MARKET_ID) {
+                      loadFastForwardSnapshot();
+                      return;
+                    }
                     run("Load market", async () => loadMarket(item.id));
                   }}
                 >

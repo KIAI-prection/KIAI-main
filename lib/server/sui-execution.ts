@@ -327,11 +327,48 @@ export async function buildDepositTransaction(
       tx.pure(bcs.vector(bcs.u8()).serialize(Array.from(outcomeId))),
       tx.pure(bcs.vector(bcs.u8()).serialize(Array.from(outcomeSlugBytes))),
       usdcCoin,
-      tx.pure(bcs.u64().serialize(shares)),
+      tx.pure.u64(shares),
     ],
   });
 
   return tx.toJSON({ supportedIntents: ["CoinWithBalance"] });
+}
+
+export type SuiDepositTransactionPayload = {
+  kind: "sui_deposit";
+  packageId: string;
+  usdcType: string;
+  marketObjectId: string;
+  outcomeSlug: string;
+  outcomeIdBytes: number[];
+  outcomeSlugBytes: number[];
+  usdcAmount: string;
+  shares: string;
+  sender: string;
+};
+
+export async function buildDepositTransactionPayload(
+  marketObjectId: string,
+  outcomeSlug: string,
+  usdcAmount: bigint,
+  shares: bigint,
+  sender: string
+): Promise<SuiDepositTransactionPayload> {
+  const outcomeId = await outcomeSlugToBytes(outcomeSlug);
+  const outcomeSlugBytes = new TextEncoder().encode(outcomeSlug);
+
+  return {
+    kind: "sui_deposit",
+    packageId: SUI_PACKAGE_ID,
+    usdcType: USDC_TYPE,
+    marketObjectId,
+    outcomeSlug,
+    outcomeIdBytes: Array.from(outcomeId),
+    outcomeSlugBytes: Array.from(outcomeSlugBytes),
+    usdcAmount: usdcAmount.toString(),
+    shares: shares.toString(),
+    sender,
+  };
 }
 
 // ---------------------------------------------------------------------------

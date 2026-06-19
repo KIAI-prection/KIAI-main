@@ -32,16 +32,21 @@ function makeDeps(order: SuiDepositPrepOrder | null) {
   return {
     findOrder: async () => order,
     markWalletPending: async (id: string) => ({ id, status: "WALLET_PENDING" }),
-    buildTransaction: async (
+    buildTransactionPayload: async (
       marketObjectId: string,
       outcomeSlug: string,
       usdcAmount: bigint,
       shares: bigint,
       sender: string
     ) =>
-      JSON.stringify({
+      ({
+        kind: "sui_deposit" as const,
+        packageId: "0xpackage",
+        usdcType: "0xusdc::usdc::USDC",
         marketObjectId,
         outcomeSlug,
+        outcomeIdBytes: [1, 2, 3],
+        outcomeSlugBytes: [104, 111, 109, 101, 45, 119, 105, 110],
         usdcAmount: usdcAmount.toString(),
         shares: shares.toString(),
         sender,
@@ -102,9 +107,14 @@ async function main() {
   );
   assert.equal(result.ok, true);
   if (result.ok) {
-    const transaction = JSON.parse(result.body.transaction);
+    const transaction = result.body.transactionPayload;
+    assert.equal(transaction.kind, "sui_deposit");
+    assert.equal(transaction.packageId, "0xpackage");
+    assert.equal(transaction.usdcType, "0xusdc::usdc::USDC");
     assert.equal(transaction.marketObjectId, "0xsui_market");
     assert.equal(transaction.outcomeSlug, "home-win");
+    assert.deepEqual(transaction.outcomeIdBytes, [1, 2, 3]);
+    assert.deepEqual(transaction.outcomeSlugBytes, [104, 111, 109, 101, 45, 119, 105, 110]);
     assert.equal(transaction.usdcAmount, "12345678");
     assert.equal(transaction.shares, "7500000");
     assert.equal(transaction.sender, walletAddress);

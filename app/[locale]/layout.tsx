@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -66,7 +67,53 @@ export default async function LocaleLayout({
       suppressHydrationWarning
       className={`${geist.variable} ${geistMono.variable} bg-background`}
     >
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased" suppressHydrationWarning>
+        <Script
+          id="extension-hydration-attribute-cleanup"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (() => {
+                const injectedAttributePattern = /^(bis_|__processed_)/;
+                const clean = (node) => {
+                  if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
+                  for (const attribute of Array.from(node.attributes)) {
+                    if (injectedAttributePattern.test(attribute.name)) {
+                      node.removeAttribute(attribute.name);
+                    }
+                  }
+                  for (const element of node.querySelectorAll("*")) {
+                    for (const attribute of Array.from(element.attributes)) {
+                      if (injectedAttributePattern.test(attribute.name)) {
+                        element.removeAttribute(attribute.name);
+                      }
+                    }
+                  }
+                };
+
+                clean(document.documentElement);
+                const observer = new MutationObserver((mutations) => {
+                  for (const mutation of mutations) {
+                    if (mutation.type === "attributes") {
+                      clean(mutation.target);
+                    }
+                    for (const node of mutation.addedNodes) {
+                      clean(node);
+                    }
+                  }
+                });
+                observer.observe(document.documentElement, {
+                  attributes: true,
+                  childList: true,
+                  subtree: true,
+                });
+                window.addEventListener("load", () => observer.disconnect(), {
+                  once: true,
+                });
+              })();
+            `,
+          }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
