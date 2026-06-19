@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { BarChart3, Loader2 } from "lucide-react";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { useAccount, useConfig, useConnect, useSwitchChain } from "wagmi";
 import {
   readContract,
@@ -91,7 +91,7 @@ interface OrderResult {
 type Chain = "BASE" | "SUI";
 type StatusTone = "error" | "info" | "success";
 
-const BASE_USDC_FALLBACK = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+const BASE_USDC_FALLBACK = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 async function parseApiResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => ({}));
@@ -254,9 +254,9 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
       throw new Error("Base vault address is missing for this market.");
     }
 
-    if (chainId !== baseSepolia.id) {
-      setPanelStatus("Switching wallet to Base Sepolia...");
-      await switchChainAsync({ chainId: baseSepolia.id });
+    if (chainId !== base.id) {
+      setPanelStatus("Switching wallet to Base Mainnet...");
+      await switchChainAsync({ chainId: base.id });
     }
 
     const order = await createOrder();
@@ -268,7 +268,7 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
 
       setPanelStatus("Checking USDC allowance...");
       const allowance = await readContract(config, {
-        chainId: baseSepolia.id,
+        chainId: base.id,
         address: usdcAddress,
         abi: ERC20_TRADE_ABI,
         functionName: "allowance",
@@ -278,7 +278,7 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
       if ((allowance as bigint) < usdcAmount) {
         setPanelStatus("Approve USDC in your wallet...");
         const approveSimulation = await simulateContract(config, {
-          chainId: baseSepolia.id,
+          chainId: base.id,
           account: baseAddress as Address,
           address: usdcAddress,
           abi: ERC20_TRADE_ABI,
@@ -287,14 +287,14 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
         });
         const approveHash = await writeContract(config, approveSimulation.request);
         await waitForTransactionReceipt(config, {
-          chainId: baseSepolia.id,
+          chainId: base.id,
           hash: approveHash,
         });
       }
 
       setPanelStatus("Confirm the trade in your wallet...");
       const depositSimulation = await simulateContract(config, {
-        chainId: baseSepolia.id,
+        chainId: base.id,
         account: baseAddress as Address,
         address: vaultAddress,
         abi: KIAI_VAULT_TRADE_ABI,
@@ -310,7 +310,7 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
       const txHash = await writeContract(config, depositSimulation.request);
       setPanelStatus("Transaction submitted. Waiting for Base receipt...");
       const receipt = await waitForTransactionReceipt(config, {
-        chainId: baseSepolia.id,
+        chainId: base.id,
         hash: txHash,
       });
 
@@ -639,7 +639,7 @@ export function TradePanel({ market, selectedContestant }: TradePanelProps) {
         <div className="flex items-center justify-between text-sm">
           <span className="text-foreground-muted">Rail</span>
           <span className="font-medium text-foreground">
-            {activeChain === "BASE" ? "Base Sepolia" : "Sui Testnet"}
+            {activeChain === "BASE" ? "Base Mainnet" : "Sui Mainnet"}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">

@@ -6,7 +6,7 @@ import {
 
 export type DemoMarketChainDeployment = {
   chain: "BASE" | "SUI";
-  collateral: "USDC_BASE_SEPOLIA" | "USDC_SUI_TESTNET";
+  collateral: "USDC_BASE_MAINNET" | "USDC_SUI_MAINNET";
   deployStatus: "not_deployed";
 };
 
@@ -30,12 +30,12 @@ export type DemoMarket = {
 const DEFAULT_CHAIN_DEPLOYMENT_PLAN: DemoMarketChainDeployment[] = [
   {
     chain: "BASE",
-    collateral: "USDC_BASE_SEPOLIA",
+    collateral: "USDC_BASE_MAINNET",
     deployStatus: "not_deployed",
   },
   {
     chain: "SUI",
-    collateral: "USDC_SUI_TESTNET",
+    collateral: "USDC_SUI_MAINNET",
     deployStatus: "not_deployed",
   },
 ];

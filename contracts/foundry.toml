@@ -11,9 +11,11 @@ remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
 ]
 
-[profile.default.rpc_endpoints]
+[rpc_endpoints]
+base = "${BASE_MAINNET_RPC_URL}"
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 local = "http://localhost:8545"
 
-[profile.default.etherscan]
+[etherscan]
+base = { key = "${BASESCAN_API_KEY}", url = "https://api.basescan.org/api" }
 base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }

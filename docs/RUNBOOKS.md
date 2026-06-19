@@ -2,7 +2,7 @@
 
 Updated: 2026-06-05
 
-These runbooks are for the controlled testnet beta. They do not authorize mainnet launch, real-money marketing claims, DeFi fallbacks, bridges, swaps, yield routing, sponsored gas, or unsupported collateral.
+These runbooks are for the controlled mainnet migration state recorded in docs/DEPLOYMENTS.md. They do not authorize mainnet launch, real-money marketing claims, DeFi fallbacks, bridges, swaps, yield routing, sponsored gas, or unsupported collateral.
 
 ## Beta Readiness Check
 
@@ -42,9 +42,9 @@ Do not mark beta ready if:
 ## Base Deploy Runbook
 
 1. Refresh Base and Circle source docs before changing addresses or deployment config.
-2. Confirm `BASE_SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, `BASE_SEPOLIA_USDC_ADDRESS`, and `BASE_SEPOLIA_KIAI_VAULT_ADDRESS` are configured.
+2. Confirm `BASE_MAINNET_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, `BASE_MAINNET_USDC_ADDRESS`, and `BASE_MAINNET_KIAI_VAULT_ADDRESS` are configured.
 3. Run Foundry build/test from `contracts/`.
-4. Deploy only to Base Sepolia for Phase 1.
+4. Deploy only to Base Mainnet for Phase 1.
 5. Record contract address, transaction hash, block number, operator address, and timestamp in `docs/DEPLOYMENTS.md`.
 6. Create/update `ChainDeployment` records through the admin workflow.
 7. Run `GET /api/admin/ops/status` and confirm the Base rail is observable.
@@ -59,9 +59,9 @@ Rollback:
 ## Sui Deploy Runbook
 
 1. Refresh Sui docs before changing Move package, object, or GraphQL config.
-2. Confirm `SUI_TESTNET_RPC_URL`, `SUI_TESTNET_GRAPHQL_URL`, `SUI_OPERATOR_PRIVATE_KEY`, `SUI_TESTNET_KIAI_VAULT_PACKAGE_ID`, `SUI_TESTNET_KIAI_VAULT_REGISTRY_ID`, and `SUI_TESTNET_KIAI_OPERATOR_CAP_ID`.
+2. Confirm `SUI_MAINNET_RPC_URL`, `SUI_MAINNET_GRAPHQL_URL`, `SUI_OPERATOR_PRIVATE_KEY`, `SUI_MAINNET_KIAI_VAULT_PACKAGE_ID`, `SUI_MAINNET_KIAI_VAULT_REGISTRY_ID`, and `SUI_MAINNET_KIAI_OPERATOR_CAP_ID`.
 3. Run Sui Move tests from `contracts/sui`.
-4. Publish or call only on Sui Testnet for Phase 1.
+4. Publish or call only on Sui Mainnet for Phase 1.
 5. For backend market objects, run `pnpm deploy:sui-market <backend-market-id>`. The script signs `create_market`, waits for Sui visibility, extracts the shared `Market<USDC>` object ID, and writes it to `ChainDeployment.poolAddress`.
 6. Record package ID, registry object, operator cap, market object IDs, digest, and timestamp in `docs/DEPLOYMENTS.md`.
 7. Re-run `GET /api/admin/ops/status` and verify the Sui rail is `deployed` before demo trading.

@@ -1,7 +1,7 @@
 /**
  * KIAI Sui Event Poller
  *
- * Queries Sui Testnet GraphQL for kiai_vault events.
+ * Queries Sui Mainnet GraphQL for kiai_vault events.
  * Uses @mysten/sui gRPC client — JSON-RPC is deprecated (July 2026).
  *
  * Architecture: Sui is a custody/settlement rail only.
@@ -24,18 +24,16 @@ import { toPrismaJson } from "@/lib/server/json";
 // ---------------------------------------------------------------------------
 
 const PACKAGE_ID =
-  process.env.SUI_TESTNET_KIAI_VAULT_PACKAGE_ID ??
-  "0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089";
+  process.env.SUI_MAINNET_KIAI_VAULT_PACKAGE_ID ?? "";
 
 // Sui GraphQL RPC endpoint (NOT the same as the fullnode gRPC endpoint)
-// Official public-good testnet endpoint: https://graphql.testnet.sui.io/graphql
-// Source: https://docs.sui.io/develop/accessing-data/graphql/query-with-graphql (verified 2026-06-03)
-// Note: SUI_TESTNET_RPC_URL is the gRPC/fullnode endpoint (different from GraphQL)
+// Official public-good mainnet endpoint: https://graphql.mainnet.sui.io/graphql
+// Note: SUI_MAINNET_RPC_URL is the gRPC/fullnode endpoint (different from GraphQL)
 const GRAPHQL_URL =
-  process.env.SUI_TESTNET_GRAPHQL_URL ?? "https://graphql.testnet.sui.io/graphql";
+  process.env.SUI_MAINNET_GRAPHQL_URL ?? "https://graphql.mainnet.sui.io/graphql";
 
 // Deployment checkpoint sequence — start indexing from here
-const DEPLOYMENT_CHECKPOINT = BigInt(837464313);
+const DEPLOYMENT_CHECKPOINT = BigInt(process.env.SUI_MAINNET_DEPLOYMENT_CHECKPOINT ?? "0");
 
 const POLL_INTERVAL_MS = 8_000; // slightly slower than Base (Sui checkpoints ~1-2s)
 let _isRunning = false;
@@ -95,6 +93,10 @@ export async function pollSuiEvents(): Promise<{
   processed: number;
   eventTypesChecked: number;
 }> {
+  if (!PACKAGE_ID) {
+    throw new Error("SUI_MAINNET_KIAI_VAULT_PACKAGE_ID is required for Sui event polling.");
+  }
+
   let processed = 0;
 
   // Get last indexed checkpoint from DB
@@ -245,7 +247,7 @@ async function pollSuiEventType(
 
 function buildEventsQuery(eventType: string, after: string | null): string {
   const afterClause = after ? `, after: "${after}"` : "";
-  // Field names confirmed against Sui testnet GraphQL schema 2026-06-03:
+  // Field names confirmed against Sui GraphQL schema during the source audit:
   // filter.type (not eventType), transaction.digest, contents.json, sender.address
   // EventFilter fields: afterCheckpoint, atCheckpoint, beforeCheckpoint, sender, module, type
   // Event fields: contents, eventBcs, sender, sequenceNumber, timestamp, transaction, transactionModule

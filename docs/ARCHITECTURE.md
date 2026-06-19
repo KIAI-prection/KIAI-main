@@ -1,3 +1,7 @@
+# Current Mainnet Note
+
+As of 2026-06-19, the current deployment source of truth is docs/DEPLOYMENTS.md: Base Mainnet is deployed for the shared vault and all non-archived markets; Sui Mainnet publish is blocked until the operator address receives an owned SUI gas coin object. Older testnet architecture notes below are historical implementation context.
+
 # KIAI Architecture
 
 ## Goal

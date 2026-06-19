@@ -15,8 +15,8 @@
   <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
 </p>
 <p align="center">
-  <img src="https://img.shields.io/badge/Sui_Testnet-🟢_Live-4DA2FF?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Base_Sepolia-🟢_Live-0052FF?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Sui_Mainnet-Blocked-4DA2FF?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Base_Mainnet-Live-0052FF?style=for-the-badge" />
   <img src="https://img.shields.io/badge/LMSR-AMM_Pricing-8B5CF6?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Dual--Rail-Settlement-F59E0B?style=for-the-badge" />
 </p>
@@ -65,18 +65,18 @@ Built from the ground up: Japan-native market catalogue, real LMSR pricing, dual
 
 ## 🌏 Market Universe
 
-Eight live markets. Not seed data dressed as product — real markets with real LMSR pricing, both chains active.
+Eight non-archived markets are prepared for the mainnet catalogue. Base Mainnet is deployed for all eight; Sui Mainnet is configured but blocked until the operator address receives a usable gas coin object.
 
 | 🎯 Market | 🏷️ Category | ⛓️ Rails |
 |-----------|------------|---------|
-| 🏆 **Nagoya Basho 2026 Winner** | Sumo | Sui · Base |
-| 🎌 **Yokozuna Terunofuji Final Record** | Sumo | Sui · Base |
-| ⚾ **Summer Koshien 2026 Champion** | Baseball | Sui · Base |
-| 🏟️ **NPB Central League Pennant 2026** | Baseball | Sui · Base |
-| 🗳️ **Japan House of Councillors 2025** | Politics | Sui · Base |
-| ⚽ **EPL Man City vs Arsenal Opener** | Football | Sui · Base |
-| 🏎️ **F1 Japanese Grand Prix 2026** | Motorsport | Sui · Base |
-| 📚 **Akutagawa Prize 2026 Debut-Author** | Culture | Sui · Base |
+| 🏆 **Nagoya Basho 2026 Winner** | Sumo | Base live / Sui pending |
+| 🎌 **Yokozuna Terunofuji Final Record** | Sumo | Base live / Sui pending |
+| ⚾ **Summer Koshien 2026 Champion** | Baseball | Base live / Sui pending |
+| 🏟️ **NPB Central League Pennant 2026** | Baseball | Base live / Sui pending |
+| 🗳️ **Japan House of Councillors 2028 Coalition Majority** | Politics | Base live / Sui pending |
+| 🏎️ **F1 Abu Dhabi GP 2026 Winner** | Motorsport | Base live / Sui pending |
+| 📚 **Akutagawa Prize 2026 Second Half** | Culture | Base live / Sui pending |
+| ⚽ **Thailand U19 vs Australia U19 ASEAN 2026** | Football | Base live / Sui pending |
 
 > 💡 Every market shares one LMSR pool. Sui or Base — same odds, same liquidity, one position.
 
@@ -90,8 +90,8 @@ One market. Two custody rails. No liquidity split. No arbitrage gap.
 
 | ✅ Capability | 📋 Detail |
 |-------------|---------|
-| 🔵 **Sui Move vault** | Move 2024 package · market registry · typed `OperatorCap` · USDC custody · real tx digests |
-| 🟡 **Base Solidity vault** | `KIAIVault.sol` on Base Sepolia · Foundry-tested · OpenZeppelin-hardened · verifiable on Basescan |
+| 🔵 **Sui Move vault** | Move 2024 package, registry, OperatorCap, and USDC custody. Mainnet publish dry-run passed; actual publish is blocked by missing SUI gas coin. |
+| 🟡 **Base Solidity vault** | KIAIVault.sol on Base Mainnet, Foundry-tested and OpenZeppelin-hardened. |
 | 🔄 **Per-rail settlement** | Resolve, refund, reconcile jobs run independently per chain — retryable and inspectable |
 | 🔁 **Chain reconciler** | Continuously syncs Sui effects + Base events → DB · Portfolio truth never drifts from chain reality |
 
@@ -192,8 +192,8 @@ flowchart LR
 flowchart TB
   Pool["📐 KIAI Market Pool<br/>Single LMSR pool · Shared odds"] --> DB[(🗄️ PostgreSQL + Prisma)]
   DB --> API[🔌 KIAI API Layer]
-  API --> BaseRail["🟡 Base Sepolia<br/>KIAIVault.sol + USDC"]
-  API --> SuiRail["🔵 Sui Testnet<br/>kiai_vault.move + USDC"]
+  API --> BaseRail["🟡 Base Mainnet<br/>KIAIVault.sol + USDC"]
+  API --> SuiRail["🔵 Sui Mainnet<br/>kiai_vault.move + USDC"]
   BaseRail --> BaseEvents[📋 Base Events & Receipts]
   SuiRail --> SuiEffects[📋 Sui Effects & Objects]
   BaseEvents --> Reconciler[🔄 Chain Reconciler]
@@ -290,15 +290,13 @@ One guarantee drives every design decision in KIAI's resolution layer: **no outc
 
 ---
 
-## 📦 Testnet Deployments
+## 📦 Mainnet Deployments
 
 | 🌐 Network | 📦 Artifact | 🔑 Address |
 |-----------|-----------|----------|
-| 🔵 **Sui Testnet** | `kiai_vault` package | `0x1064637e...aa089` |
-| 🔵 **Sui Testnet** | Market registry | `0xa522ecb8...84754` |
-| 🔵 **Sui Testnet** | OperatorCap | `0x583b904c...93ace` |
-| 🔵 **Sui Testnet** | Nagoya Basho market object | [`0x3b9ba8a8...caa44`](https://suiscan.xyz/testnet/tx/5CCYuNr7JJZaTsHf3ETaARzhZKfvrDgjCirkvr9HSLKY) |
-| 🟡 **Base Sepolia** | `KIAIVault.sol` | [`0x3d1E1993...458A8`](https://sepolia.basescan.org/address/0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8) |
+| 🟡 **Base Mainnet** | KIAIVault.sol | 0xb1Df6Ae8C267E07BCc0B1d83dF878089E1F5bc94 |
+| 🟡 **Base Mainnet** | 8 non-archived market records | Created on-chain, blocks 47534647-47534656 |
+| 🔵 **Sui Mainnet** | kiai_vault package | Pending: publish dry-run passed, actual publish blocked by missing owned gas coin |
 
 > 📄 Full addresses + tx hashes → [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md)
 
@@ -339,16 +337,16 @@ pnpm dev   # → http://localhost:3000/en
 DATABASE_URL=postgresql://...
 OPERATOR_SECRET=your-secret-here
 
-# 🟡 Base Sepolia
-BASE_RPC_URL=...
-BASE_CONTRACT_ADDRESS=0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8
+# 🟡 Base Mainnet
+BASE_MAINNET_RPC_URL=https://mainnet.base.org
+BASE_MAINNET_KIAI_VAULT_ADDRESS=0xb1Df6Ae8C267E07BCc0B1d83dF878089E1F5bc94
 
-# 🔵 Sui Testnet
-SUI_RPC_URL=...
-SUI_GRAPHQL_URL=...
-SUI_PACKAGE_ID=0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089
-SUI_REGISTRY_ID=0xa522ecb86041af442dddc00db3a24e107918443cc6d5fd486adc90bc65784754
-SUI_OPERATOR_CAP_ID=0x583b904cc0837d44b16d6dd17df133938c8d0202a75c9d73358c9b3d9b393ace
+# 🔵 Sui Mainnet
+SUI_MAINNET_RPC_URL=https://fullnode.mainnet.sui.io:443
+SUI_MAINNET_GRAPHQL_URL=https://graphql.mainnet.sui.io/graphql
+SUI_MAINNET_KIAI_VAULT_PACKAGE_ID=
+SUI_MAINNET_KIAI_VAULT_REGISTRY_ID=
+SUI_MAINNET_KIAI_OPERATOR_CAP_ID=
 
 API_FOOTBALL_KEY=...   # optional — evidence prefill
 ```

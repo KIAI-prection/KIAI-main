@@ -62,14 +62,18 @@ async function main() {
   });
 
   if (!market) throw new Error("Market " + marketId + " not found.");
-  if (market.lifecycle !== "LIVE") {
-    throw new Error("Market must be LIVE for demo trading. Current lifecycle: " + market.lifecycle);
+  if (market.lifecycle === "ARCHIVED") {
+    throw new Error("Archived markets cannot be deployed. Current lifecycle: " + market.lifecycle);
   }
 
   const suiDeployment = market.chainDeployments.find((deployment) => deployment.chain === "SUI");
   if (!suiDeployment) throw new Error("Sui deployment record missing for " + marketId + ".");
 
-  if (suiDeployment.deployStatus === "deployed" && suiDeployment.poolAddress) {
+  if (
+    suiDeployment.deployStatus === "deployed" &&
+    suiDeployment.contractAddress === SUI_PACKAGE_ID &&
+    suiDeployment.poolAddress
+  ) {
     console.log(
       JSON.stringify(
         {
@@ -136,6 +140,7 @@ async function main() {
     where: { marketId_chain: { marketId, chain: "SUI" } },
     data: {
       deployStatus: "deployed",
+      collateral: "USDC_SUI_MAINNET",
       contractAddress: SUI_PACKAGE_ID,
       poolAddress: marketObject.objectId,
       failureReason: null,

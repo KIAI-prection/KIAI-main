@@ -40,7 +40,7 @@ for (const market of DEMO_MARKETS) {
   );
   assert.deepEqual(
     market.chainDeploymentPlan.map((deployment) => deployment.collateral).sort(),
-    ["USDC_BASE_SEPOLIA", "USDC_SUI_TESTNET"],
+    ["USDC_BASE_MAINNET", "USDC_SUI_MAINNET"],
     market.slug
   );
 

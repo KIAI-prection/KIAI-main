@@ -36,15 +36,15 @@ const REQUIRED_ENV: EnvRequirement[] = [
     minLength: 1,
     recommendedMinLength: 32,
   },
-  { name: "BASE_SEPOLIA_RPC_URL", category: "chain", severity: "blocker", minLength: 10 },
-  { name: "SUI_TESTNET_RPC_URL", category: "chain", severity: "blocker", minLength: 10 },
-  { name: "SUI_TESTNET_GRAPHQL_URL", category: "chain", severity: "blocker", minLength: 10 },
-  { name: "BASE_SEPOLIA_USDC_ADDRESS", category: "chain", severity: "blocker", minLength: 42 },
-  { name: "SUI_TESTNET_USDC_TYPE", category: "chain", severity: "blocker", minLength: 20 },
-  { name: "BASE_SEPOLIA_KIAI_VAULT_ADDRESS", category: "chain", severity: "blocker", minLength: 42 },
-  { name: "SUI_TESTNET_KIAI_VAULT_PACKAGE_ID", category: "chain", severity: "blocker", minLength: 42 },
-  { name: "SUI_TESTNET_KIAI_VAULT_REGISTRY_ID", category: "chain", severity: "blocker", minLength: 42 },
-  { name: "SUI_TESTNET_KIAI_OPERATOR_CAP_ID", category: "chain", severity: "blocker", minLength: 42 },
+  { name: "BASE_MAINNET_RPC_URL", category: "chain", severity: "blocker", minLength: 10 },
+  { name: "SUI_MAINNET_RPC_URL", category: "chain", severity: "blocker", minLength: 10 },
+  { name: "SUI_MAINNET_GRAPHQL_URL", category: "chain", severity: "blocker", minLength: 10 },
+  { name: "BASE_MAINNET_USDC_ADDRESS", category: "chain", severity: "blocker", minLength: 42 },
+  { name: "SUI_MAINNET_USDC_TYPE", category: "chain", severity: "blocker", minLength: 20 },
+  { name: "BASE_MAINNET_KIAI_VAULT_ADDRESS", category: "chain", severity: "blocker", minLength: 42 },
+  { name: "SUI_MAINNET_KIAI_VAULT_PACKAGE_ID", category: "chain", severity: "blocker", minLength: 42 },
+  { name: "SUI_MAINNET_KIAI_VAULT_REGISTRY_ID", category: "chain", severity: "blocker", minLength: 42 },
+  { name: "SUI_MAINNET_KIAI_OPERATOR_CAP_ID", category: "chain", severity: "blocker", minLength: 42 },
   { name: "DEPLOYER_PRIVATE_KEY", category: "chain", severity: "warning", minLength: 32 },
   { name: "SUI_OPERATOR_PRIVATE_KEY", category: "chain", severity: "warning", minLength: 32 },
 ];
@@ -59,8 +59,8 @@ const PUBLIC_PLACEHOLDER_PATTERNS = [
 ];
 
 const ALLOWED_COLLATERAL = new Set<CollateralAsset>([
-  "USDC_BASE_SEPOLIA",
-  "USDC_SUI_TESTNET",
+  "USDC_BASE_MAINNET",
+  "USDC_SUI_MAINNET",
 ]);
 
 const PENDING_ORDER_STATUSES: OrderIntentStatus[] = [

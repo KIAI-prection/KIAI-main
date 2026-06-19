@@ -6,35 +6,35 @@ import "../src/KIAIVault.sol";
 
 /**
  * @title DeployKIAIVault
- * @notice Foundry deployment script for KIAIVault on Base Sepolia.
+ * @notice Foundry deployment script for KIAIVault on Base Mainnet.
  *
  * Usage (from contracts/ directory):
  *
  *   # Dry run (no broadcast):
  *   forge script script/DeployKIAIVault.s.sol \
- *     --rpc-url base_sepolia \
+ *     --rpc-url base \
  *     --sig "run(address)" \
- *     0x036CbD53842c5426634e7929541eC2318f3dCF7e
+ *     0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
  *
  *   # Deploy (broadcast):
  *   forge script script/DeployKIAIVault.s.sol \
- *     --rpc-url base_sepolia \
+ *     --rpc-url base \
  *     --broadcast \
  *     --verify \
  *     --sig "run(address)" \
- *     0x036CbD53842c5426634e7929541eC2318f3dCF7e
+ *     0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
  *
  * Required env vars:
  *   DEPLOYER_PRIVATE_KEY   — deployer wallet private key (never commit)
- *   BASE_SEPOLIA_RPC_URL   — Base Sepolia RPC endpoint
+ *   BASE_MAINNET_RPC_URL   — Base Mainnet RPC endpoint
  *   BASESCAN_API_KEY       — for contract verification (optional)
  *
  * After deployment, call POST /api/admin/markets/<marketId>/deploy/result
  * with { chain: "BASE", success: true, contractAddress: "<deployed address>" }
  * to record the deployment in the KIAI backend.
  *
- * Note: USDC address on Base Sepolia (Circle official, verified 2026-06-02):
- *   0x036CbD53842c5426634e7929541eC2318f3dCF7e
+ * Note: USDC address on Base Mainnet (Circle official):
+ *   0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
  */
 contract DeployKIAIVault is Script {
     function run(address usdcAddress) external returns (KIAIVault vault) {
@@ -44,7 +44,7 @@ contract DeployKIAIVault is Script {
         address deployer = vm.addr(deployerKey);
 
         console.log("=== KIAIVault Deployment ===");
-        console.log("Network: Base Sepolia");
+        console.log("Network: Base Mainnet");
         console.log("Deployer:", deployer);
         console.log("USDC:", usdcAddress);
         console.log("Chain ID:", block.chainid);
@@ -61,7 +61,7 @@ contract DeployKIAIVault is Script {
         console.log("");
         console.log("Next steps:");
         console.log("1. Verify contract on Basescan:");
-        console.log("   forge verify-contract <addr> src/KIAIVault.sol:KIAIVault --chain-id 84532");
+        console.log("   forge verify-contract <addr> src/KIAIVault.sol:KIAIVault --chain-id 8453");
         console.log("2. Call KIAI admin API to record deployment:");
         console.log("   POST /api/admin/markets/<marketId>/deploy/result");
         console.log("   { chain: BASE, success: true, contractAddress: <addr> }");

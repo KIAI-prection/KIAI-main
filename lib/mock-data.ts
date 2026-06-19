@@ -507,7 +507,7 @@ export const mockArticles: Article[] = [
     date: "May 25, 2026",
     title: enOnly("How KIAI resolves sumo markets"),
     excerpt: enOnly(
-      "A practical guide to official sources, dispute windows, and how a testnet position moves from open to settled."
+      "A practical guide to official sources, dispute windows, and how a mainnet position moves from open to settled."
     ),
     author: "KIAI Research",
   },

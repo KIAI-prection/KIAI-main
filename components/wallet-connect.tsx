@@ -32,7 +32,7 @@ export function WalletConnect() {
           <div className="flex items-center gap-2">
             <Wallet className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-sm font-semibold text-foreground">Base Sepolia</p>
+              <p className="text-sm font-semibold text-foreground">Base Mainnet</p>
               <p className="text-xs text-foreground-muted">
                 {shortAddress(baseAddress)}
               </p>
@@ -71,7 +71,7 @@ export function WalletConnect() {
           <div className="flex items-center gap-2">
             <Wallet className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-sm font-semibold text-foreground">Sui Testnet</p>
+              <p className="text-sm font-semibold text-foreground">Sui Mainnet</p>
               <p className="text-xs text-foreground-muted">
                 {shortAddress(suiConnection.account?.address)}
               </p>

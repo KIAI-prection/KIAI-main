@@ -152,7 +152,7 @@ export function Header() {
               <DialogHeader>
                 <DialogTitle>Wallets</DialogTitle>
                 <DialogDescription>
-                  Connect a Base or Sui testnet wallet before placing a real trade.
+                  Connect a Base or Sui mainnet wallet before placing a real trade.
                 </DialogDescription>
               </DialogHeader>
               <WalletConnect />
@@ -199,7 +199,7 @@ export function Header() {
                       <DialogHeader>
                         <DialogTitle>Wallets</DialogTitle>
                         <DialogDescription>
-                          Connect a Base or Sui testnet wallet before placing a real trade.
+                          Connect a Base or Sui mainnet wallet before placing a real trade.
                         </DialogDescription>
                       </DialogHeader>
                       <WalletConnect />
