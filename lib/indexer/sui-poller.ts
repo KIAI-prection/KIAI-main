@@ -147,7 +147,7 @@ async function pollSuiEventType(
           nodes?: Array<{
             contents?: { json?: unknown };
             timestamp?: string;
-            transaction?: { digest?: string; checkpoint?: { sequenceNumber?: string } };
+            transaction?: { digest?: string; effects?: { checkpoint?: { sequenceNumber?: string } } };
             transactionModule?: { package?: { address?: string }; name?: string };
             sender?: { address?: string };
             sequenceNumber?: string;
@@ -168,7 +168,7 @@ async function pollSuiEventType(
 
     for (const event of events.nodes) {
       const digest = event.transaction?.digest;
-      const checkpointSeq = event.transaction?.checkpoint?.sequenceNumber;
+      const checkpointSeq = event.transaction?.effects?.checkpoint?.sequenceNumber;
       if (!digest) continue;
 
       const checkpoint = checkpointSeq ? BigInt(checkpointSeq) : afterCheckpoint;
@@ -265,7 +265,7 @@ function buildEventsQuery(eventType: string, after: string | null): string {
           transactionModule { package { address } name }
           transaction {
             digest
-            checkpoint { sequenceNumber }
+            effects { checkpoint { sequenceNumber } }
           }
         }
         pageInfo {

@@ -2,12 +2,12 @@
 
 All contract deployment records for KIAI. This file is factual deployment state, not a roadmap.
 
-## Mainnet Status — 2026-06-19
+## Mainnet Status — 2026-06-20
 
 | Rail | Network | Status | Notes |
 | --- | --- | --- | --- |
 | Base | Base Mainnet, chain ID `8453` | Deployed | `KIAIVault.sol` deployed and all non-archived markets created on-chain. |
-| Sui | Sui Mainnet | Blocked | Package publish dry-run passed, but actual publish is blocked because the operator address has no owned SUI gas coin object in the Sui CLI. |
+| Sui | Sui Mainnet | Deployed | Package + all 8 markets deployed. Poller indexed 8 `MarketCreatedEvent`s at checkpoints 289186230–289186286. |
 
 ## Base Mainnet
 
@@ -59,35 +59,45 @@ DB verification after indexing:
 | GraphQL | `https://graphql.mainnet.sui.io/graphql` |
 | USDC type | `0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC` |
 | Operator address | `0x73e478cb66dd91fbc37d19f625f24a6d4b9846f86b5952dff04c1f843ac1b331` |
-| Status | Blocked before publish |
+| Package ID | `0x298f714144788755ad494a2238c6972189bf610c03794d4ee964dceef7a51d2b` |
+| Registry ID | `0x61f5136fd78bc202ae83abbe7a1aa5aa95c7af537e622dcdafb62f584f6a3005` |
+| OperatorCap ID | `0x05fa49d932332a4d91f07215d0f36ed52d96fe20e9c46126abfe39a6fe019039` |
+| UpgradeCap ID | `0x68cc4b8251adbb4f1499d298a85ef08ac24d81c83f15f159bb72d43a258c5d22` |
+| Deploy tx digest | `C3pZZY98bLScVQt3EDRHTBNYeapPMHAHWvegsfbETSSb` |
+| Deploy checkpoint | `289185782` |
+| Status | Deployed |
 
-Sui dry-run proof:
+Publish notes:
 
-- `sui client publish --dry-run --json --gas-budget 500000000` succeeded.
-- Dry-run produced a candidate package, registry, and operator-cap object.
-- Dry-run balance change was `-37104400` MIST.
+- `sui client publish` CLI was blocked because `suix_getOwnedObjects` indexer had not caught up with
+  the operator address gas coin (received via `accumulator_settlement` validator reward).
+- `suix_getCoins` and `sui_getObject` both confirmed 24 SUI gas coin existed:
+  `0x10d5f31284c36afe6a021abe2348414e9c9fc0cbfc70ef14329276701fe3c82c`.
+- Published via `scripts/publish-sui-mainnet.ts` using `@mysten/sui` SDK v2.x with
+  `tx.setGasPayment([{ objectId, version, digest }])` to bypass the CLI indexer dependency.
+- Gas used: 37,016,400 MIST (1,000,000 computation + 36,016,400 storage).
 
-Actual publish blocker:
+Verification:
 
-- `sui client publish --json --gas-budget 500000000` failed before broadcast.
-- Error: the CLI could not find a SUI gas coin for `0x73e478cb66dd91fbc37d19f625f24a6d4b9846f86b5952dff04c1f843ac1b331`.
-- `sui client gas --json` returned `[]`.
-- The app-side SDK balance probe reported `addressBalance: 4000000000`, but there is no owned gas coin object available to the CLI.
+- `objectChanges` confirmed `published` type with `kiai_vault` module.
+- `KIAIVaultRegistry` created as shared object at version 1.
+- `OperatorCap` created as address-owned object at version 1.
+- `UpgradeCap` (0x2::package::UpgradeCap) created and held by operator.
 
-DB state while blocked:
+### Sui Market Creation
 
-- All 8 non-archived Sui deployment rows use `USDC_SUI_MAINNET`.
-- Their Sui contract/pool addresses are cleared.
-- Their deploy status is `deploy_failed` with the gas-coin blocker recorded.
+All 8 non-archived markets created on Sui Mainnet.
 
-Resume steps:
-
-1. Transfer an owned SUI coin object to `0x73e478cb66dd91fbc37d19f625f24a6d4b9846f86b5952dff04c1f843ac1b331`.
-2. Confirm `sui client gas --json` lists a usable gas coin.
-3. Run `sui client publish --json --gas-budget 500000000` from `contracts/sui`.
-4. Fill `SUI_MAINNET_KIAI_VAULT_PACKAGE_ID`, `SUI_MAINNET_KIAI_VAULT_REGISTRY_ID`, `SUI_MAINNET_KIAI_OPERATOR_CAP_ID`, and `SUI_MAINNET_DEPLOYMENT_CHECKPOINT` in `.env`.
-5. Run `pnpm deploy:mainnet-markets -- --sui-only`.
-6. Run the Sui poller/reconcile path and update this file with final package/object IDs and digests.
+| Market | Lifecycle | Pool Object ID | Tx Digest |
+| --- | --- | --- | --- |
+| `nagoya-basho-2026-winner` | LIVE | `0x377eca888ccaa932644f8ca93f32315c627ab61a9b605e92beef550c0a6f8a7b` | `3yyiyxV5gaS88XhbMQuSpot6oCqUKc6hHSSZEytrGjV7` |
+| `yokozuna-terunofuji-nagoya-2026-record` | DRAFT | `0x20b19f619ebbeda9c33c65bef42ee8eb77624f7861d11328fa31fb526e4f3209` | `65YTcVdcEe4TEG7nxup7mKyDA2PWY36f9epTzvDRkKSb` |
+| `summer-koshien-2026-winner` | DRAFT | `0x580b279781e94719dbedfd51b8da1946ec65fe2108a706059b79c8e1c3736f06` | `DvPwAQDZ5Z4XdfCQDti9sEA7vS7EhExc4QgfuDfGhTsg` |
+| `npb-central-league-pennant-2026` | DRAFT | `0x7ea159286f6ce351f23ce2f17788c2e5fb1c65ca4e6c312cc9175f20d418f05c` | `4BBGDnzR3qK8jZDcFGLyJCLBtHbpcY6ekZCN6NEHSDgx` |
+| `akutagawa-prize-2026-second-half` | DRAFT | `0xb91d0d481a4728b9b0b1aa8b4c8a6ca66fed33be50f2d21f7d899c025d0d53f3` | `ZSHQ8R7bUNuxmt3rJT2s9yT4M65SmVskMnUWSLQWpHL` |
+| `japan-house-councillors-2028-coalition-majority` | DRAFT | `0x104d1f280bfaa9028fe8d3c5586abbb371b878ad033ce2816f169b743ac023d1` | `8MPkQbXZsmHGDyKeut9hxr23Mh5bj319cJMdN3S36quL` |
+| `f1-abu-dhabi-gp-2026-winner` | DRAFT | `0x1b3e633398b69030299b42c2acb72488ca3cb6b579922f8f57aeb67e0bd7a2c8` | `BQkx2hXBwWfXC3JTHkuTTkYp5CTqMTYGQoVr3c8KYcf7` |
+| `thailand-u19-vs-australia-u19-asean-2026` | REVIEWED | `0x1b8406d78a6667eec55a71cac578f3abaa8782b4737bf26f9cdbe56d7711b07f` | `AmcwbLhK7NogsZhMhaCV83NK3kW9B7VcDaNWzbzCpMUx` |
 
 ## Env Keys
 
@@ -102,10 +112,10 @@ BASE_MAINNET_DEPLOYMENT_BLOCK="47534586"
 SUI_MAINNET_RPC_URL="https://fullnode.mainnet.sui.io:443"
 SUI_MAINNET_GRAPHQL_URL="https://graphql.mainnet.sui.io/graphql"
 SUI_MAINNET_USDC_TYPE="0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC"
-SUI_MAINNET_KIAI_VAULT_PACKAGE_ID=""
-SUI_MAINNET_KIAI_VAULT_REGISTRY_ID=""
-SUI_MAINNET_KIAI_OPERATOR_CAP_ID=""
-SUI_MAINNET_DEPLOYMENT_CHECKPOINT=""
+SUI_MAINNET_KIAI_VAULT_PACKAGE_ID="0x298f714144788755ad494a2238c6972189bf610c03794d4ee964dceef7a51d2b"
+SUI_MAINNET_KIAI_VAULT_REGISTRY_ID="0x61f5136fd78bc202ae83abbe7a1aa5aa95c7af537e622dcdafb62f584f6a3005"
+SUI_MAINNET_KIAI_OPERATOR_CAP_ID="0x05fa49d932332a4d91f07215d0f36ed52d96fe20e9c46126abfe39a6fe019039"
+SUI_MAINNET_DEPLOYMENT_CHECKPOINT="289185782"
 ~~~
 
 Never commit private keys or `.env`.
