@@ -1,217 +1,279 @@
-# KIAI — The Spirit Engine
+<div align="center">
 
-**Prediction markets for Japan-relevant and global events.**  
-Sports · Politics · Culture · Esports · Special Events
+# ⛩️ KIAI
 
-> *Pick the market. KIAI handles the rails.*
+**Prediction markets for Japan — and everyone else the big platforms ignore.**
 
----
+Sports · Culture · Politics · Motorsport — priced by LMSR, settled on two mainnets.
 
-## What is KIAI?
+<br/>
 
-KIAI is a dual-chain prediction market platform targeting Japan-first, globally relevant events. Users trade on outcomes across sumo, baseball, football, F1, elections, culture awards, and more — with real USDC settlement on both **Base** and **Sui** testnets.
+[![Next.js](https://img.shields.io/badge/Next.js_16-App_Router-black?style=flat-square&logo=nextdotjs)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7_strict-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
+[![Sui](https://img.shields.io/badge/Sui_Mainnet-Live-4DA2FF?style=flat-square)](https://suiscan.xyz/mainnet/object/0x298f714144788755ad494a2238c6972189bf610c03794d4ee964dceef7a51d2b)
+[![Base](https://img.shields.io/badge/Base_Mainnet-Live-0052FF?style=flat-square)](https://basescan.org/address/0xb1Df6Ae8C267E07BCc0B1d83dF878089E1F5bc94)
+[![LMSR](https://img.shields.io/badge/Pricing-LMSR_AMM-8B5CF6?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-12_suites_passing-22C55E?style=flat-square)]()
 
-**Architecture in one line:** One unified market pool (LMSR pricing in the backend), two payment rails (Base + Sui). Users pick which chain to deposit on. The market price is always the same.
-
----
-
-## Current Status — Testnet
-
-| Phase | Status | Evidence |
-|---|---|---|
-| Phase 0 — Planning | ✅ Complete | `docs/PLAN.md` |
-| Phase 1 — Source Audit | ✅ Complete | `docs/RESEARCH.md` |
-| Phase 2 — Backend + APIs | ✅ Complete | 15 API routes, Neon DB |
-| Phase 3 — Operator Admin | ✅ Complete | 8 markets seeded |
-| Phase 4 — Base Rail | ✅ Complete | Contract live, 24/24 tests |
-| Phase 5 — Sui Rail | ✅ Complete | Package live, 8/8 tests |
-| Phase 6 — Indexer | ⏳ Next | Envio + Sui gRPC poller |
-| Phase 7 — UI Integration | ⏳ Upcoming | Wire frozen UI to APIs |
-| Phase 8 — Resolution | ⏳ Upcoming | Settlement + refunds |
+</div>
 
 ---
 
-## Live Contracts (Testnet)
+KIAI is a dual-chain prediction market platform. Traders pick an outcome and choose a chain (Sui or Base) to deposit USDC. Both rails settle into the **same LMSR pool** — same odds, same liquidity, one position. The platform ships with a Japan-native market catalogue, an evidence-backed resolution pipeline, and a full operator command center.
 
-| Chain | Contract | Address |
-|---|---|---|
-| **Base Sepolia** | `KIAIVault.sol` | `0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8` |
-| **Sui Testnet** | `kiai_vault` package | `0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089` |
-
-USDC collateral (Circle official, verified 2026-06-02):
-- Base Sepolia: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
-- Sui Testnet: `0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC`
-
-Full deployment details → [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md)
-
----
-
-## Tech Stack
-
-| Layer | Tech |
-|---|---|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind 4, Radix UI |
-| Backend | Next.js API routes, Node.js |
-| Database | PostgreSQL + Prisma 7 (hosted on Neon) |
-| Base contracts | Solidity 0.8.24, Foundry, OpenZeppelin, viem |
-| Sui contracts | Move 2024, Sui CLI 1.72.1, `@mysten/sui` gRPC |
-| Indexer (Phase 6) | Envio HyperIndex (Base) + custom Sui GraphQL poller |
-| Pricing | LMSR backend AMM (TypeScript) |
-| i18n | next-intl (English only for now) |
-
----
-
-## Local Development
-
-### Prerequisites
-
-- Node.js 22+, pnpm 8+
-- [Foundry](https://book.getfoundry.sh/) (`foundryup`)
-- [Sui CLI](https://docs.sui.io/guides/developer/getting-started/sui-install) 1.72+
-- A [Neon](https://neon.tech) PostgreSQL project
-
-### Setup
-
-```bash
-# 1. Clone and install
-git clone <repo>
-cd KIAI-main
-pnpm install
-
-# 2. Install Foundry dependencies (if contracts/lib/ is missing)
-cd contracts && forge install && cd ..
-
-# 3. Rebuild Sui Move artifacts (if contracts/sui/build/ is missing)
-cd contracts/sui && sui move build && cd ../..
-
-# 4. Configure environment
-cp .env.example .env
-# Edit .env — add your DATABASE_URL from Neon console
-
-# 5. Run database migrations
-pnpm exec prisma migrate deploy
-
-# 6. Seed demo markets
-pnpm exec tsx prisma/seed.ts
-
-# 7. Start dev server
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
----
-
-## API Routes
-
-| Method | Route | Description |
-|---|---|---|
-| `GET` | `/api/chains` | Available chains + verified USDC addresses |
-| `GET` | `/api/markets` | Public market list (LIVE/REVIEWED) |
-| `GET` | `/api/markets/[slug]` | Market detail with chain deployments |
-| `POST` | `/api/compliance/check` | Eligibility check before trade |
-| `POST` | `/api/quotes` | LMSR price quote |
-| `POST` | `/api/orders` | Create order from quote |
-| `PATCH` | `/api/orders/[id]` | Update order with tx hash |
-| `GET` | `/api/portfolio` | Reconciled positions + pending orders |
-| `POST` | `/api/admin/markets` | Create market (operator only) |
-| `PATCH` | `/api/admin/markets/[id]` | Lifecycle transition (operator only) |
-| `POST` | `/api/admin/markets/[id]/deploy` | Trigger chain deployment |
-| `POST` | `/api/admin/markets/[id]/deploy/result` | Record deployment result |
-| `POST` | `/api/admin/markets/[id]/pause` | Pause / unpause market |
-| `POST` | `/api/admin/markets/[id]/resolution` | Propose / finalize outcome |
-| `GET` | `/api/admin/audit` | Operator action audit log |
-
-All `/api/admin/*` routes require `Authorization: Bearer <OPERATOR_SECRET>`.
-
----
-
-## Contract Tests
-
-```bash
-# Base (Solidity) — 24 tests
-cd contracts && forge test --summary
-
-# Sui (Move) — 8 tests
-cd contracts/sui && sui move test
-```
+**Not a prototype.** Contracts are deployed. Markets are live. Every trade path reaches a real transaction hash on a real chain.
 
 ---
 
 ## Architecture
 
-**One pool, two payment rails** — locked architectural principle:
+```mermaid
+flowchart TD
+    subgraph Frontend["Frontend · Next.js 16 + React 19"]
+        UI[Market UI]
+        WalletSui["@mysten/dapp-kit"]
+        WalletBase[wagmi / viem]
+        OpConsole[Operator Console]
+    end
 
-- Market pricing (LMSR) and the pool live in the KIAI backend
-- Base and Sui are custody/settlement rails only — users choose how to deposit
-- On-chain contracts are pure custody vaults: accept USDC → record position → pay winner
-- A user on Base and a user on Sui trade the same market at the same price
+    subgraph Backend["Backend · TypeScript API"]
+        LMSR["LMSR Pricing Engine\n(cost · price · quote)"]
+        OrderAPI[Order & Portfolio API]
+        AdminAPI["Admin API\n(14 endpoints)"]
+        Reconciler["Chain Reconciler\n(Sui + Base)"]
+        EvidenceEngine["Evidence & Resolution\nPipeline"]
+    end
+
+    subgraph DB["PostgreSQL · Prisma 7 · Neon"]
+        Markets[(Markets)]
+        Orders[(Orders)]
+        Positions[(Positions)]
+        Events[(Chain Events)]
+    end
+
+    subgraph Chains["Mainnets"]
+        SuiVault["🔵 Sui Mainnet\nkiai_vault.move\nMove 2024 · USDC"]
+        BaseVault["🟡 Base Mainnet\nKIAIVault.sol\nSolidity · USDC"]
+    end
+
+    UI --> LMSR --> OrderAPI
+    WalletSui -->|"sign PTB"| SuiVault
+    WalletBase -->|"writeContract"| BaseVault
+    OrderAPI --> DB
+    SuiVault -->|"MarketCreatedEvent\nPositionOpenedEvent"| Reconciler
+    BaseVault -->|"viem getLogs"| Reconciler
+    Reconciler --> DB
+    OpConsole --> AdminAPI --> EvidenceEngine --> DB
+    AdminAPI -->|"resolve / refund"| SuiVault
+    AdminAPI -->|"resolve / refund"| BaseVault
+```
+
+---
+
+## Trade Flow
+
+```mermaid
+sequenceDiagram
+    actor Trader
+    participant UI as KIAI Frontend
+    participant API as KIAI API
+    participant LMSR as LMSR Engine
+    participant Chain as Sui or Base Vault
+    participant Reconciler as Chain Reconciler
+    participant DB as PostgreSQL
+
+    Trader->>UI: Pick outcome + stake
+    UI->>API: POST /api/quotes
+    API->>LMSR: lmsrQuote(outcome, amount)
+    LMSR-->>API: { cost, shares, price }
+    API-->>UI: Locked quote
+
+    Trader->>UI: Confirm trade
+    UI->>API: POST /api/orders (quote id)
+    API->>DB: OrderIntent PENDING
+
+    UI->>Chain: signAndExecuteTransaction (Sui) or writeContract (Base)
+    Chain-->>UI: tx digest / tx hash
+
+    UI->>API: PATCH /api/orders/:id (attach tx hash)
+    API->>DB: OrderIntent SUBMITTED_TO_CHAIN
+
+    Reconciler->>Chain: Poll events (GraphQL / viem)
+    Chain-->>Reconciler: PositionOpenedEvent
+    Reconciler->>DB: ChainEvent + Trade + UserPosition
+    Reconciler->>DB: OrderIntent RECONCILED
+
+    API-->>Trader: Portfolio updated ✓
+```
+
+> **Nothing shows as final until wallet, backend, chain, and reconciler all agree.**
+
+---
+
+## Live on Mainnet
+
+### Sui Mainnet
+
+| Object | Address |
+|--------|---------|
+| **Package** | [`0x298f714...`](https://suiscan.xyz/mainnet/object/0x298f714144788755ad494a2238c6972189bf610c03794d4ee964dceef7a51d2b) |
+| **Registry** | [`0x61f5136...`](https://suiscan.xyz/mainnet/object/0x61f5136fd78bc202ae83abbe7a1aa5aa95c7af537e622dcdafb62f584f6a3005) |
+| **Deploy tx** | [`C3pZZY98...`](https://suiscan.xyz/mainnet/tx/C3pZZY98bLScVQt3EDRHTBNYeapPMHAHWvegsfbETSSb) |
+| **Markets deployed** | Checkpoints 289186230 – 289186286 |
+
+### Base Mainnet
+
+| Object | Address |
+|--------|---------|
+| **KIAIVault.sol** | [`0xb1Df6Ae8...`](https://basescan.org/address/0xb1Df6Ae8C267E07BCc0B1d83dF878089E1F5bc94) |
+| **USDC** | [`0x833589fC...`](https://basescan.org/address/0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) |
+| **Deploy tx** | [`0x16d36063...`](https://basescan.org/tx/0x16d36063ff5107572b7ae47eaf349ebed0ef24a60668118560ef94fb43c06cd7) |
+| **Markets deployed** | Blocks 47534647 – 47534656 |
+
+Full object IDs, pool addresses, and per-market tx digests → [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md)
+
+---
+
+## Market Catalogue
+
+8 markets live across both chains. One LMSR pool per market — same price on Sui and Base.
+
+| Market | Category | Chains |
+|--------|----------|--------|
+| **Nagoya Basho 2026 Winner** | Sumo | Sui · Base |
+| **Yokozuna Terunofuji Final Record** | Sumo | Sui · Base |
+| **Summer Koshien 2026 Champion** | Baseball | Sui · Base |
+| **NPB Central League Pennant 2026** | Baseball | Sui · Base |
+| **Akutagawa Prize 2026 — Second Half** | Culture | Sui · Base |
+| **Japan House of Councillors 2028** | Politics | Sui · Base |
+| **F1 Abu Dhabi GP 2026 Winner** | Motorsport | Sui · Base |
+| **Thailand U19 vs Australia U19 — ASEAN 2026** | Football | Sui · Base |
+
+---
+
+## Key Features
+
+**Dual-chain, single pool**
+One market. Two custody rails. No arbitrage gap, no liquidity split. A Sui trade and a Base trade on the same market move the same LMSR pool at the same price.
+
+**LMSR pricing engine**
+The industry-standard AMM used by Gnosis, Augur, and Polymarket. Implemented in TypeScript with persisted state — every quote is deterministic, every price is reproducible. `cost(q) = b·ln(Σ exp(qᵢ/b))`.
+
+**Evidence-first resolution**
+Every resolution requires a structured evidence bundle: source URL, raw payload, SHA content hash, certainty level, and a dispute window before any settlement instruction fires. Source adapters for Sumo/JSA and API-Football inject structured evidence automatically.
+
+**Chain reconciler**
+Dual pollers — a viem log poller for Base events and a Sui GraphQL poller for Sui effects — continuously sync on-chain state into the database. Portfolio state never drifts from chain reality.
+
+**Operator command center**
+Full market lifecycle from the browser: create → deploy → price → pause → evidence → resolve → settle → reconcile → audit. 14 authenticated API endpoints. Every action logged.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **App** | Next.js 16 App Router · React 19 · TypeScript 5.7 strict |
+| **UI** | Tailwind CSS 4 · Radix UI · Framer Motion |
+| **Database** | PostgreSQL · Prisma 7 · Neon serverless |
+| **Sui** | Move 2024 · `@mysten/sui` v2 gRPC · Sui CLI 1.73 |
+| **Base** | Solidity 0.8.24 · Foundry · OpenZeppelin · viem |
+| **Wallets** | `@mysten/dapp-kit` (Sui) · wagmi (EVM) |
+| **Pricing** | LMSR backend AMM (TypeScript) |
+| **Indexing** | Custom viem log poller (Base) · Sui GraphQL event poller |
+| **Testing** | 12-suite TypeScript integration tests · Foundry · Move test |
+
+---
+
+## API
+
+### Public
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/api/chains` | Supported chains and collateral tokens |
+| `GET` | `/api/markets` | Catalogue with live LMSR pricing |
+| `GET` | `/api/markets/[slug]` | Single market — prices, outcomes, resolution state |
+| `POST` | `/api/compliance/check` | Pre-trade eligibility gate |
+| `POST` | `/api/quotes` | LMSR quote for an outcome and stake amount |
+| `POST` | `/api/orders` | Create order from a locked quote |
+| `PATCH` | `/api/orders/[id]` | Attach chain tx hash, update settlement status |
+| `GET` | `/api/portfolio` | Reconciled positions, settled outcomes |
+
+### Operator (Bearer auth required)
+
+`/api/admin/markets` — create, deploy, pause, resolve, evidence, disputes, settlement, source adapters, oracle assertions  
+`/api/admin/reconcile` — trigger chain reconciliation  
+`/api/admin/ops/status` — platform health  
+`/api/admin/audit` — full timestamped action log  
+`/api/admin/evidence-archive` — raw evidence bundles by content hash
+
+---
+
+## Repository
 
 ```
-Frozen UI
-    │
-    ▼
-KIAI API (Markets · Quotes · Orders · Portfolio · Compliance)
-    │
-    ├── Domain Database (Neon PostgreSQL)
-    │       LMSR pool state · Positions · Quotes · Orders · Audit log
-    │
-    ├── Base Settlement Rail                Sui Settlement Rail
-    │   KIAIVault.sol                       kiai_vault.move
-    │   0x3d1E1993...                       0x1064637e...
-    │   USDC_BASE_SEPOLIA                   USDC_SUI_TESTNET
-    │
-    └── Indexer (Phase 6)
-        Envio HyperIndex (Base)
-        Custom Sui GraphQL poller
+├── app/
+│   └── api/               # 8 public + 14 operator endpoints
+├── components/            # UI components
+├── contracts/
+│   ├── src/               # KIAIVault.sol  (Base)
+│   └── sui/               # kiai_vault.move (Sui)
+├── lib/
+│   ├── domain/            # LMSR · market · resolution · settlement
+│   ├── indexer/           # base-poller.ts · sui-poller.ts
+│   └── server/            # Chain execution · reconciler · auth
+├── prisma/                # Schema · 5 migrations · seed
+├── scripts/               # deploy-mainnet-markets.ts · publish-sui-mainnet.ts
+└── tests/                 # 12 integration suites
 ```
 
-Full architecture details → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+---
+
+## Quickstart
+
+```bash
+# Install
+git clone <repo> && cd KIAI-main && pnpm install
+
+# Configure
+cp .env.example .env
+# Fill in: DATABASE_URL, OPERATOR_SECRET
+# Mainnet contract addresses are pre-filled in .env.example
+
+# Database
+pnpm exec prisma migrate deploy
+pnpm exec tsx prisma/seed.ts
+
+# Run
+pnpm dev   # http://localhost:3000/en
+```
+
+**Local routes**
+
+| Route | Surface |
+|-------|---------|
+| `/en` | Home |
+| `/en/markets` | Live markets |
+| `/en/portfolio` | Portfolio |
+| `/en/operator` | Operator console |
+
+```bash
+pnpm verify   # test + typecheck + lint + build
+```
 
 ---
 
-## Markets
+## Prerequisites
 
-8 demo markets seeded for testnet (all start in DRAFT, operator promotes to LIVE):
-
-- Nagoya Basho 2026 — Sumo tournament winner
-- Yokozuna Terunofuji — Final record prop
-- Summer Koshien 2026 — National high school baseball champion
-- NPB Central League pennant 2026
-- Japan House of Councillors 2025 — LDP coalition majority
-- EPL Man City vs Arsenal (August 2026 opener)
-- F1 Japanese Grand Prix 2026 — Race winner
-- Akutagawa Prize 2026 (2nd half) — Debut author wins?
+Node.js 22+ · pnpm 8+ · [Foundry](https://getfoundry.sh) · [Sui CLI 1.73+](https://docs.sui.io/guides/developer/getting-started/sui-install) · PostgreSQL ([Neon](https://neon.tech) recommended)
 
 ---
 
-## Docs
+<div align="center">
 
-| Doc | Contents |
-|---|---|
-| [`docs/PLAN.md`](docs/PLAN.md) | Master implementation plan, phase definitions, acceptance criteria |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, LMSR mechanism, API contracts, state machines |
-| [`docs/RESEARCH.md`](docs/RESEARCH.md) | Source audits, collateral verification, indexer decisions |
-| [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md) | Live contract addresses, tx hashes, upgrade history |
-| [`docs/PRODUCT.md`](docs/PRODUCT.md) | Product spec, user segments, market categories |
 
----
+*Pick the market. KIAI handles the rails.*
 
-## Key Decisions
-
-| Decision | Choice | Rationale |
-|---|---|---|
-| Market mechanism | LMSR backend AMM | Standard for prediction markets; avoids cross-chain price divergence |
-| Chain architecture | One pool, two rails | Users trade same market; chain = payment method only |
-| USDC only (Phase 1) | No USDT | Tether does not support Base Sepolia |
-| Sui data access | gRPC (`@mysten/sui/grpc`) | JSON-RPC deprecated July 2026 |
-| Base indexer | Envio HyperIndex | Production-grade, HyperSync, hosted |
-| Sui indexer | Custom GraphQL poller | No commercial indexer supports Sui |
-| Database | Neon + Prisma 7 | Serverless-compatible, TypeScript-first |
-| Resolution (Phase 1) | Official source snapshots | UMA deferred to Phase 8 |
-
----
-
-## License
-
-Private — KIAI / Navsi AI. All rights reserved.
+</div>

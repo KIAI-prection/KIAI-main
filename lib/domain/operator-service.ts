@@ -178,13 +178,13 @@ export async function createMarket(
           {
             marketId: m.id,
             chain: Chain.BASE,
-            collateral: CollateralAsset.USDC_BASE_SEPOLIA,
+            collateral: CollateralAsset.USDC_BASE_MAINNET,
             deployStatus: "not_deployed",
           },
           {
             marketId: m.id,
             chain: Chain.SUI,
-            collateral: CollateralAsset.USDC_SUI_TESTNET,
+            collateral: CollateralAsset.USDC_SUI_MAINNET,
             deployStatus: "not_deployed",
           },
         ],

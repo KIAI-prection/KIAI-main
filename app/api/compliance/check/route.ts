@@ -2,7 +2,7 @@
  * POST /api/compliance/check
  *
  * Returns structured eligibility for a wallet to trade a given market/chain.
- * In Phase 1 testnet, KYC is modeled but not enforced.
+ * KYC is modeled but not enforced in this operator-controlled runtime.
  * Region gates and Japan/politics guardrails are modeled but not enforced.
  *
  * Request body:
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Region check — modeled but not enforced in Phase 1 testnet
+    // Region check — modeled but not enforced in this operator-controlled runtime
     // Production: enforce blockedRegions when legal review is complete
     if (region && market.compliancePolicy) {
       const policy = market.compliancePolicy;
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         policy.blockedRegions.length > 0 &&
         policy.blockedRegions.includes(region)
       ) {
-        // NOTE: In Phase 1 testnet this check is logged but NOT enforced.
+        // NOTE: This check is logged but NOT enforced.
         // Uncomment the block below when production compliance is active.
         // return NextResponse.json<ComplianceResponse>({
         //   result: "blocked_region",

@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { BarChart3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { LiveBadge } from "./live-badge";
@@ -13,19 +13,9 @@ interface MarketCardProps {
 }
 
 export function MarketCard({ market }: MarketCardProps) {
-  const locale = useLocale();
   const t = useTranslations("market");
 
   const formatVolume = (volume: number) => {
-    if (locale === "ja") {
-      if (volume >= 100000000) {
-        return `¥${(volume / 100000000).toFixed(0)}億`;
-      }
-      if (volume >= 10000) {
-        return `¥${(volume / 10000).toFixed(0)}万`;
-      }
-      return `¥${volume.toLocaleString()}`;
-    }
     if (volume >= 1000000) {
       return `$${(volume / 1000000).toFixed(1)}M`;
     }
@@ -45,25 +35,25 @@ export function MarketCard({ market }: MarketCardProps) {
           <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-foreground-muted" />
             <span className="text-[11px] font-medium uppercase tracking-wider text-foreground-muted">
-              {market.categoryLabel[locale as "ja" | "en"]}
+              {market.categoryLabel.en}
             </span>
           </div>
           <span className="text-xs text-foreground-muted">
-            {market.subtitle[locale as "ja" | "en"]}
+            {market.subtitle.en}
           </span>
         </div>
 
         {/* Title */}
-        <h3 className="mb-2 text-base font-semibold leading-tight text-foreground">
-          {market.title[locale as "ja" | "en"]}
+        <h3 className="mb-2 text-base font-semibold leading-tight text-foreground min-h-[3rem]">
+          {market.title.en}
         </h3>
 
         {/* Status */}
         {market.status === "live" ? (
-          <LiveBadge info={market.statusInfo?.[locale as "ja" | "en"]} />
+          <LiveBadge info={market.statusInfo?.en} />
         ) : (
           <p className="mb-3 text-xs text-foreground-muted">
-            {market.statusInfo?.[locale as "ja" | "en"]}
+            {market.statusInfo?.en}
           </p>
         )}
 
@@ -99,7 +89,7 @@ export function MarketCard({ market }: MarketCardProps) {
 
                 <div
                   className={cn(
-                    "flex h-7 min-w-[52px] items-center justify-center rounded-full px-2 text-xs font-semibold tabular-nums",
+                    "flex h-7 min-w-[60px] items-center justify-center rounded-full px-2 text-xs font-semibold tabular-nums",
                     contestant.chance ===
                       Math.max(...topContestants.map((c) => c.chance))
                       ? "bg-yes-bg text-yes"
@@ -114,7 +104,7 @@ export function MarketCard({ market }: MarketCardProps) {
         </div>
 
         {/* Footer */}
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-foreground-muted">
+        <div className="mt-4 flex min-h-[1.5rem] items-center justify-between border-t border-border pt-3 text-xs text-foreground-muted">
           <span className="tabular-nums">{formatVolume(market.volume)} vol</span>
           <span className="tabular-nums">
             {market.marketCount} {t("markets")}

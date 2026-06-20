@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,7 +12,6 @@ import type { Position } from "@/lib/mock-data";
 
 export function PortfolioPageClient() {
   const t = useTranslations("portfolio");
-  const locale = useLocale();
   const { walletAddress, isConnected } = useKIAIWallet("BASE");
 
   const [positions, setPositions] = useState<Position[]>([]);
@@ -40,7 +39,7 @@ export function PortfolioPageClient() {
             }) => ({
               id: p.id,
               marketId: p.marketId,
-              marketTitle: { en: p.outcomeSlug, ja: p.outcomeSlug },
+              marketTitle: { en: p.outcomeSlug },
               type: p.side as "yes" | "no",
               candidate: p.outcomeSlug,
               shares: p.shares,
@@ -68,9 +67,9 @@ export function PortfolioPageClient() {
     : 0;
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(locale === "ja" ? "ja-JP" : "en-US", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: locale === "ja" ? "JPY" : "USD",
+      currency: "USD",
       maximumFractionDigits: 0,
     }).format(value);
   };
@@ -184,9 +183,7 @@ export function PortfolioPageClient() {
                   <div className="flex-1">
                     <Link href={`/markets/${position.marketId}`}>
                       <h3 className="font-medium text-foreground hover:text-brand transition-colors">
-                        {locale === "ja"
-                          ? position.marketTitle.ja
-                          : position.marketTitle.en}
+                        {position.marketTitle.en}
                       </h3>
                     </Link>
                     <div className="flex items-center gap-2 mt-1">

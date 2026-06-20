@@ -140,7 +140,7 @@
     },
     "faq5": {
       "question": "Can I use KIAI from Japan?",
-      "answer": "Yes, KIAI is available to customers in Japan with full Japanese language support."
+      "answer": "Yes, KIAI is available to customers in Japan through the English product experience."
     },
     "legalTitle": "Legal Documents",
     "termsOfService": "Terms of Service",
@@ -185,11 +185,7 @@
   "settings": {
     "title": "Settings",
     "description": "Manage your account settings",
-    "subtitle": "Configure language, theme, notifications, and more",
-    "language": {
-      "title": "Language",
-      "select": "Display Language"
-    },
+    "subtitle": "Configure theme, notifications, and more",
     "theme": {
       "title": "Theme",
       "select": "Select Theme",

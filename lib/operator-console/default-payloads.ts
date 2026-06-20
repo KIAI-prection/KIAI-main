@@ -14,6 +14,19 @@ function firstOutcomeSlug(market?: OperatorConsoleMarket | null) {
   return market?.outcomes?.[0]?.slug ?? "winning-outcome";
 }
 
+function outcomeSlugByNameOrIndex(
+  market: OperatorConsoleMarket | null | undefined,
+  matcher: RegExp,
+  index: number,
+  fallback: string
+) {
+  return (
+    market?.outcomes?.find((outcome) => matcher.test(outcome.slug))?.slug ??
+    market?.outcomes?.[index]?.slug ??
+    fallback
+  );
+}
+
 export function buildResolutionPolicyDraft(market?: OperatorConsoleMarket | null) {
   const outcomeMapping = Object.fromEntries(
     (market?.outcomes ?? []).map((outcome) => [outcome.slug, outcome.slug])
@@ -114,5 +127,27 @@ export function buildSumoJsaObservationDraft(
     providerEventStatus: "official_confirmed",
     observedOutcomeSlug: firstOutcomeSlug(market),
     notes: "Operator reviewed official source snapshot.",
+  };
+}
+
+export function buildApiFootballFixtureDraft(
+  market?: OperatorConsoleMarket | null
+) {
+  return {
+    fixtureId: 1553093,
+    sourceCertainty: "provisional" as const,
+    marketQuestion:
+      market?.titleEn ??
+      "Thailand U19 vs Australia U19 — ASEAN Championship match result",
+    expectedHomeTeam: "Thailand U19",
+    expectedAwayTeam: "Australia U19",
+    expectedLeagueName: "ASEAN Championship U19",
+    outcomeSlugMap: {
+      home: outcomeSlugByNameOrIndex(market, /home|thailand/i, 0, "home-win"),
+      draw: outcomeSlugByNameOrIndex(market, /draw/i, 1, "draw"),
+      away: outcomeSlugByNameOrIndex(market, /away|australia/i, 2, "away-win"),
+    },
+    notes:
+      "Live API-FOOTBALL demo fixture. Treat this as evidence prefill only; settlement still requires the written resolution policy and operator review.",
   };
 }

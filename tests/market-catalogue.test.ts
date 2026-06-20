@@ -13,7 +13,7 @@ const expectedSlugs = [
   "summer-koshien-2026-winner",
   "npb-central-league-pennant-2026",
   "japan-house-councillors-2028-coalition-majority",
-  "epl-2026-27-opening-weekend-featured-match",
+  "thailand-u19-vs-australia-u19-asean-2026",
   "f1-abu-dhabi-gp-2026-winner",
   "akutagawa-prize-2026-second-half",
 ];
@@ -40,7 +40,7 @@ for (const market of DEMO_MARKETS) {
   );
   assert.deepEqual(
     market.chainDeploymentPlan.map((deployment) => deployment.collateral).sort(),
-    ["USDC_BASE_SEPOLIA", "USDC_SUI_TESTNET"],
+    ["USDC_BASE_MAINNET", "USDC_SUI_MAINNET"],
     market.slug
   );
 

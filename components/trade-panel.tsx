@@ -2,28 +2,41 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { BarChart3, ChevronDown, Loader2 } from "lucide-react";
+import { BarChart3, Loader2 } from "lucide-react";
+import { base } from "wagmi/chains";
+import { useAccount, useConfig, useConnect, useSwitchChain } from "wagmi";
+import {
+  readContract,
+  simulateContract,
+  waitForTransactionReceipt,
+  writeContract,
+} from "@wagmi/core";
+import { useDAppKit } from "@mysten/dapp-kit-react";
+import { bcs } from "@mysten/sui/bcs";
+import { Transaction } from "@mysten/sui/transactions";
+import type { Address } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useKIAIWallet } from "@/lib/hooks/use-kiai-wallet";
 import type { UIMarket, UIContestant } from "@/lib/domain/market-service";
+import { sharesToBaseUnits, usdToUsdcUnits } from "@/lib/domain/trade-units";
+import {
+  ERC20_TRADE_ABI,
+  KIAI_VAULT_TRADE_ABI,
+  marketIdToBytes32,
+  outcomeSlugToBytes32,
+} from "@/lib/contracts/trading-abis";
 
 interface TradePanelProps {
   market: UIMarket;
   selectedContestant: UIContestant | null;
-  locale: string;
 }
 
 interface QuoteResult {
   id: string;
+  chain: "BASE" | "SUI";
   pricePerShare: number;
   sharesOut: number;
   totalCostUsd: number;
@@ -32,86 +45,435 @@ interface QuoteResult {
   expiresAt: string;
 }
 
-export function TradePanel({ market, selectedContestant, locale }: TradePanelProps) {
+type SuiDepositTransactionPayload = {
+  kind: "sui_deposit";
+  packageId: string;
+  usdcType: string;
+  marketObjectId: string;
+  outcomeSlug: string;
+  outcomeIdBytes: number[];
+  outcomeSlugBytes: number[];
+  usdcAmount: string;
+  shares: string;
+  sender: string;
+};
+
+function buildSuiDepositTransaction(payload: SuiDepositTransactionPayload) {
+  const tx = new Transaction();
+  tx.setSender(payload.sender);
+
+  const usdcCoin = tx.coin({
+    type: payload.usdcType,
+    balance: BigInt(payload.usdcAmount),
+    useGasCoin: false,
+  });
+
+  tx.moveCall({
+    target: payload.packageId + "::kiai_vault::deposit",
+    typeArguments: [payload.usdcType],
+    arguments: [
+      tx.object(payload.marketObjectId),
+      tx.pure(bcs.vector(bcs.u8()).serialize(payload.outcomeIdBytes)),
+      tx.pure(bcs.vector(bcs.u8()).serialize(payload.outcomeSlugBytes)),
+      usdcCoin,
+      tx.pure.u64(BigInt(payload.shares)),
+    ],
+  });
+
+  return tx;
+}
+
+interface OrderResult {
+  id: string;
+  status: string;
+}
+
+type Chain = "BASE" | "SUI";
+type StatusTone = "error" | "info" | "success";
+
+const BASE_USDC_FALLBACK = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+
+async function parseApiResponse<T>(response: Response): Promise<T> {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      typeof data.message === "string"
+        ? data.message
+        : typeof data.error === "string"
+          ? data.error
+          : "Request failed.";
+    throw new Error(message);
+  }
+  return data as T;
+}
+
+async function getBaseUsdcAddress(): Promise<Address> {
+  const response = await fetch("/api/chains");
+  const data = await parseApiResponse<{
+    chains: Array<{
+      chain: Chain;
+      collateral: { address: string };
+    }>;
+  }>(response);
+  const base = data.chains.find((chain) => chain.chain === "BASE");
+  return (base?.collateral.address ?? BASE_USDC_FALLBACK) as Address;
+}
+
+export function TradePanel({ market, selectedContestant }: TradePanelProps) {
   const t = useTranslations("trade");
   const tMarket = useTranslations("market");
   const [tradeType, setTradeType] = useState<"buy" | "sell">("buy");
   const [position, setPosition] = useState<"yes" | "no">("yes");
+  const [activeChain, setActiveChain] = useState<Chain>("BASE");
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<"jpy" | "usd">(
-    locale === "ja" ? "jpy" : "usd"
-  );
-  // API-backed quote state
   const [quote, setQuote] = useState<QuoteResult | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [orderError, setOrderError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusTone, setStatusTone] = useState<StatusTone>("info");
 
-  // Wallet state
-  const { chain, walletAddress, isConnected } = useKIAIWallet("BASE");
+  const config = useConfig();
+  const dAppKit = useDAppKit();
+  const { address: baseAddress, chainId } = useAccount();
+  const { connectors, connectAsync } = useConnect();
+  const { switchChainAsync } = useSwitchChain();
+  const { baseAddress: baseWalletAddress, suiAddress } = useKIAIWallet(activeChain);
 
   const contestant = selectedContestant || market.contestants[0];
   const numAmount = parseFloat(amount) || 0;
+  const activeDeployment = market.chainDeployments.find(
+    (deployment) => deployment.chain === activeChain
+  );
+  const railIsDeployed = activeDeployment?.deployStatus === "deployed";
+  const activeWalletAddress =
+    activeChain === "BASE" ? baseWalletAddress : suiAddress;
+  const activeWalletConnected = !!activeWalletAddress;
+  const baseConnector =
+    connectors.find((connector) => connector.id === "baseAccount") ??
+    connectors.find((connector) => connector.id === "injected") ??
+    connectors[0];
 
-  // LMSR quote from API (replaces static price math)
-  const fetchQuote = useCallback(async () => {
-    if (!contestant?.id || numAmount <= 0 || !chain) return;
+  function setPanelStatus(message: string, tone: StatusTone = "info") {
+    setStatusMessage(message);
+    setStatusTone(tone);
+  }
 
-    setQuoteLoading(true);
-    try {
-      const res = await fetch("/api/quotes", {
+  async function patchOrder(
+    orderId: string,
+    body: {
+      status: "WALLET_PENDING" | "WALLET_REJECTED" | "SUBMITTED_TO_CHAIN" | "CHAIN_FAILED";
+      txHash?: string;
+      failureReason?: string;
+    }
+  ) {
+    await parseApiResponse(
+      await fetch("/api/orders/" + orderId, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+    );
+  }
+
+  async function createOrder(): Promise<OrderResult> {
+    if (!quote || !activeWalletAddress) {
+      throw new Error("Quote and wallet are required before order creation.");
+    }
+
+    const data = await parseApiResponse<{ order: OrderResult }>(
+      await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          marketId: market.id,
-          outcomeId: contestant.id,
-          chain,
-          side: position,
-          amountUsd: numAmount,
-          walletAddress: walletAddress ?? undefined,
+          quoteId: quote.id,
+          walletAddress: activeWalletAddress,
         }),
-      });
-      const data = await res.json();
-      if (data.quote) setQuote(data.quote);
-    } catch {
-      // Quote failure is non-fatal — fall back to static price display
+      })
+    );
+    return data.order;
+  }
+
+  const fetchQuote = useCallback(async () => {
+    if (!contestant?.id || numAmount <= 0 || !railIsDeployed) {
+      setQuote(null);
+      return;
+    }
+
+    setQuoteLoading(true);
+    try {
+      const data = await parseApiResponse<{ quote: QuoteResult }>(
+        await fetch("/api/quotes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            marketId: market.id,
+            outcomeId: contestant.id,
+            chain: activeChain,
+            side: position,
+            amountUsd: numAmount,
+            walletAddress: activeWalletAddress ?? undefined,
+          }),
+        })
+      );
+      setQuote(data.quote);
+      setStatusMessage(null);
+    } catch (error) {
+      setQuote(null);
+      setPanelStatus(
+        error instanceof Error ? error.message : "Unable to create quote.",
+        "error"
+      );
     } finally {
       setQuoteLoading(false);
     }
-  }, [market.id, contestant?.id, chain, position, numAmount, walletAddress]);
+  }, [
+    activeChain,
+    activeWalletAddress,
+    contestant?.id,
+    market.id,
+    numAmount,
+    position,
+    railIsDeployed,
+  ]);
 
-  // Debounce quote fetch 600ms after amount/position changes
   useEffect(() => {
-    if (numAmount <= 0) { setQuote(null); return; }
+    if (numAmount <= 0) {
+      setQuote(null);
+      return;
+    }
     const timer = setTimeout(fetchQuote, 600);
     return () => clearTimeout(timer);
   }, [fetchQuote, numAmount, position]);
 
-  // Use LMSR quote if available, fallback to static contestant price
+  async function executeBaseTrade() {
+    if (!quote || !contestant || !baseAddress || !activeDeployment) return;
+
+    const vaultAddress = (activeDeployment.contractAddress ??
+      activeDeployment.poolAddress) as Address | null;
+    if (!vaultAddress) {
+      throw new Error("Base vault address is missing for this market.");
+    }
+
+    if (chainId !== base.id) {
+      setPanelStatus("Switching wallet to Base Mainnet...");
+      await switchChainAsync({ chainId: base.id });
+    }
+
+    const order = await createOrder();
+    try {
+      await patchOrder(order.id, { status: "WALLET_PENDING" });
+      const usdcAddress = await getBaseUsdcAddress();
+      const usdcAmount = usdToUsdcUnits(quote.totalCostUsd);
+      const shares = sharesToBaseUnits(quote.sharesOut);
+
+      setPanelStatus("Checking USDC allowance...");
+      const allowance = await readContract(config, {
+        chainId: base.id,
+        address: usdcAddress,
+        abi: ERC20_TRADE_ABI,
+        functionName: "allowance",
+        args: [baseAddress as Address, vaultAddress],
+      });
+
+      if ((allowance as bigint) < usdcAmount) {
+        setPanelStatus("Approve USDC in your wallet...");
+        const approveSimulation = await simulateContract(config, {
+          chainId: base.id,
+          account: baseAddress as Address,
+          address: usdcAddress,
+          abi: ERC20_TRADE_ABI,
+          functionName: "approve",
+          args: [vaultAddress, usdcAmount],
+        });
+        const approveHash = await writeContract(config, approveSimulation.request);
+        await waitForTransactionReceipt(config, {
+          chainId: base.id,
+          hash: approveHash,
+        });
+      }
+
+      setPanelStatus("Confirm the trade in your wallet...");
+      const depositSimulation = await simulateContract(config, {
+        chainId: base.id,
+        account: baseAddress as Address,
+        address: vaultAddress,
+        abi: KIAI_VAULT_TRADE_ABI,
+        functionName: "deposit",
+        args: [
+          marketIdToBytes32(market.id),
+          outcomeSlugToBytes32(contestant.slug),
+          contestant.slug,
+          usdcAmount,
+          shares,
+        ],
+      });
+      const txHash = await writeContract(config, depositSimulation.request);
+      setPanelStatus("Transaction submitted. Waiting for Base receipt...");
+      const receipt = await waitForTransactionReceipt(config, {
+        chainId: base.id,
+        hash: txHash,
+      });
+
+      if (receipt.status !== "success") {
+        await patchOrder(order.id, {
+          status: "CHAIN_FAILED",
+          txHash,
+          failureReason: "Base transaction receipt was not successful.",
+        });
+        setPanelStatus("Base transaction failed. No portfolio position was finalized.", "error");
+        return;
+      }
+
+      await patchOrder(order.id, {
+        status: "SUBMITTED_TO_CHAIN",
+        txHash,
+      });
+      setPanelStatus(
+        "Base transaction confirmed. Portfolio will finalize after indexer reconciliation.",
+        "success"
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Base trade failed.";
+      await patchOrder(order.id, {
+        status: message.toLowerCase().includes("reject") ? "WALLET_REJECTED" : "CHAIN_FAILED",
+        failureReason: message,
+      }).catch(() => {});
+      throw error;
+    }
+  }
+
+  async function executeSuiTrade() {
+    if (!quote || !activeWalletAddress) return;
+    const order = await createOrder();
+
+    try {
+      setPanelStatus("Preparing Sui transaction...");
+      const prep = await parseApiResponse<{
+        transactionPayload: SuiDepositTransactionPayload;
+        order: { id: string; status: string };
+      }>(
+        await fetch("/api/orders/" + order.id + "/sui-deposit-transaction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ walletAddress: activeWalletAddress }),
+        })
+      );
+
+      setPanelStatus("Confirm the Sui transaction in your wallet...");
+      const result = await dAppKit.signAndExecuteTransaction({
+        transaction: buildSuiDepositTransaction(prep.transactionPayload),
+      });
+
+      if (result.$kind === "FailedTransaction") {
+        const digest = result.FailedTransaction.digest;
+        const failedStatus = result.FailedTransaction.status as { error?: unknown };
+        const failureReason =
+          typeof failedStatus.error === "string"
+            ? failedStatus.error
+            : JSON.stringify(failedStatus.error ?? "Sui transaction failed.");
+        await patchOrder(order.id, {
+          status: "CHAIN_FAILED",
+          txHash: digest,
+          failureReason,
+        });
+        setPanelStatus("Sui transaction failed. No portfolio position was finalized.", "error");
+        return;
+      }
+
+      const digest = result.Transaction.digest;
+      setPanelStatus("Transaction submitted. Waiting for Sui indexing...");
+      await dAppKit.getClient().core.waitForTransaction({ digest });
+      await patchOrder(order.id, {
+        status: "SUBMITTED_TO_CHAIN",
+        txHash: digest,
+      });
+      setPanelStatus(
+        "Sui transaction confirmed. Portfolio will finalize after indexer reconciliation.",
+        "success"
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Sui trade failed.";
+      await patchOrder(order.id, {
+        status: message.toLowerCase().includes("reject") ? "WALLET_REJECTED" : "CHAIN_FAILED",
+        failureReason: message,
+      }).catch(() => {});
+      throw error;
+    }
+  }
+
+  async function submitTrade() {
+    if (!activeWalletConnected) {
+      if (activeChain === "BASE" && baseConnector) {
+        await connectAsync({ connector: baseConnector });
+        return;
+      }
+      setPanelStatus("Open Deposit and connect a Sui wallet before trading.", "error");
+      return;
+    }
+
+    if (!railIsDeployed) {
+      setPanelStatus(activeChain + " is not deployed for this market yet.", "error");
+      return;
+    }
+
+    if (tradeType !== "buy" || position !== "yes") {
+      setPanelStatus(
+        "Real wallet execution currently supports buying YES positions only.",
+        "error"
+      );
+      return;
+    }
+
+    if (!quote) {
+      setPanelStatus("Enter an amount and wait for a fresh quote first.", "error");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatusMessage(null);
+    try {
+      if (activeChain === "BASE") {
+        await executeBaseTrade();
+      } else {
+        await executeSuiTrade();
+      }
+    } catch (error) {
+      setPanelStatus(
+        error instanceof Error ? error.message : "Trade execution failed.",
+        "error"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   const price = position === "yes" ? contestant?.priceYes : contestant?.priceNo;
   const sharesOut = quote?.sharesOut ?? (price ? Math.floor((numAmount / price) * 100) : 0);
   const estimatedReturn = sharesOut * 1;
   const profit = estimatedReturn - numAmount;
 
   const formatCurrency = (value: number) => {
-    if (currency === "jpy") {
-      return `¥${value.toLocaleString()}`;
-    }
-    return `$${value.toFixed(2)}`;
+    return "$" + value.toFixed(2);
   };
+
+  const statusClassName =
+    statusTone === "error"
+      ? "bg-destructive/10 text-destructive"
+      : statusTone === "success"
+        ? "bg-up/10 text-up"
+        : "bg-muted text-foreground-secondary";
 
   return (
     <Card className="overflow-hidden border border-border bg-card">
-      {/* Header */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <BarChart3 className="h-4 w-4 text-foreground-muted" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
-            {market.title[locale as "ja" | "en"]}
+            {market.title.en}
           </p>
         </div>
       </div>
 
-      {/* Selected Contestant */}
       <div className="border-b border-border px-4 py-3">
         <p className="text-xs text-foreground-muted">
           {tradeType === "buy" ? t("buy") : t("sell")} {position === "yes" ? tMarket("yes") : tMarket("no")}
@@ -119,11 +481,39 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
         <p className="font-medium text-foreground">{contestant?.name}</p>
       </div>
 
-      {/* Buy/Sell Toggle */}
       <div className="border-b border-border p-4">
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          {(["BASE", "SUI"] as const).map((chain) => {
+            const deployment = market.chainDeployments.find((item) => item.chain === chain);
+            const deployed = deployment?.deployStatus === "deployed";
+            return (
+              <button
+                key={chain}
+                type="button"
+                disabled={!deployed}
+                onClick={() => {
+                  setActiveChain(chain);
+                  setQuote(null);
+                  setStatusMessage(null);
+                }}
+                className={cn(
+                  "rounded-lg border px-3 py-2 text-xs font-semibold transition-colors",
+                  activeChain === chain
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-foreground-secondary hover:border-border-strong",
+                  !deployed && "cursor-not-allowed opacity-50"
+                )}
+              >
+                {chain === "BASE" ? "Base" : "Sui"}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex items-center gap-2">
           <div className="flex flex-1 rounded-lg border border-border p-1">
             <button
+              type="button"
               onClick={() => setTradeType("buy")}
               className={cn(
                 "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors",
@@ -135,6 +525,7 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
               {t("buy")}
             </button>
             <button
+              type="button"
               onClick={() => setTradeType("sell")}
               className={cn(
                 "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors",
@@ -147,30 +538,16 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
             </button>
           </div>
 
-          {/* Currency Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                {currency === "jpy" ? "¥" : "$"}
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setCurrency("jpy")}>
-                ¥ JPY
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCurrency("usd")}>
-                $ USD
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" size="sm" disabled>
+            $ USD
+          </Button>
         </div>
       </div>
 
-      {/* Yes/No Selection */}
       <div className="border-b border-border p-4">
         <div className="grid grid-cols-2 gap-3">
           <button
+            type="button"
             onClick={() => setPosition("yes")}
             className={cn(
               "flex flex-col items-center rounded-xl border-2 py-3 transition-all",
@@ -198,6 +575,7 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
           </button>
 
           <button
+            type="button"
             onClick={() => setPosition("no")}
             className={cn(
               "flex flex-col items-center rounded-xl border-2 py-3 transition-all",
@@ -226,43 +604,49 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
         </div>
       </div>
 
-      {/* Amount Input */}
       <div className="border-b border-border p-4">
         <label className="mb-2 block text-xs font-medium text-foreground-muted">
           {t("amount")}
         </label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted">
-            {currency === "jpy" ? "¥" : "$"}
+            $
           </span>
           <Input
             type="number"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(event) => setAmount(event.target.value)}
             placeholder="0"
             className="pl-7 text-right tabular-nums"
           />
         </div>
 
-        {/* Quick Amount Buttons */}
         <div className="mt-2 flex gap-2">
-          {[10, 50, 100, 500].map((val) => (
+          {[10, 50, 100, 500].map((value) => (
             <button
-              key={val}
-              onClick={() => setAmount(String(val))}
+              type="button"
+              key={value}
+              onClick={() => setAmount(String(value))}
               className="flex-1 rounded-lg border border-border py-1 text-xs font-medium text-foreground-secondary hover:bg-muted"
             >
-              {currency === "jpy" ? `¥${val}` : `$${val}`}
+              {"$" + value}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Summary */}
       <div className="space-y-2 p-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-foreground-muted">{t("annualReturn")}</span>
-          <span className="font-medium tabular-nums text-foreground">3.25%</span>
+          <span className="text-foreground-muted">Rail</span>
+          <span className="font-medium text-foreground">
+            {activeChain === "BASE" ? "Base Mainnet" : "Sui Mainnet"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-foreground-muted">Shares</span>
+          <span className="font-medium tabular-nums text-foreground">
+            {quote ? quote.sharesOut.toFixed(4) : sharesOut.toFixed(2)}
+          </span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-foreground-muted">{t("estimatedReturn")}</span>
@@ -272,13 +656,12 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
         </div>
       </div>
 
-      {/* Order status message */}
-      {orderError && (
-        <div className="mx-4 mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          {orderError}
+      {statusMessage && (
+        <div className={cn("mx-4 mb-2 rounded-lg px-3 py-2 text-xs", statusClassName)}>
+          {statusMessage}
         </div>
       )}
-      {/* Submit Button */}
+
       <div className="p-4 pt-0">
         <Button
           className={cn(
@@ -290,31 +673,21 @@ export function TradePanel({ market, selectedContestant, locale }: TradePanelPro
           disabled={
             !amount ||
             numAmount <= 0 ||
-            quoteLoading
+            quoteLoading ||
+            isSubmitting ||
+            !railIsDeployed
           }
-          onClick={async () => {
-            if (!isConnected || !walletAddress) {
-              setOrderError("Connect your wallet to trade.");
-              return;
-            }
-            if (!quote) {
-              setOrderError("Request a quote first by entering an amount.");
-              return;
-            }
-
-            setOrderError(null);
-            setOrderError(
-              "Real wallet transaction signing is not wired yet, so no order was submitted."
-            );
-          }}
+          onClick={submitTrade}
         >
-          {quoteLoading ? (
+          {quoteLoading || isSubmitting ? (
             <span className="flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Pricing...
+              {quoteLoading ? "Pricing..." : "Submitting..."}
             </span>
-          ) : !isConnected ? (
-            "Connect Wallet to Trade"
+          ) : !activeWalletConnected ? (
+            activeChain === "BASE" ? "Connect Base Wallet" : "Connect Sui Wallet"
+          ) : !railIsDeployed ? (
+            "Rail unavailable"
           ) : (
             t("submit")
           )}

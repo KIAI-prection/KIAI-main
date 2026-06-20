@@ -1,192 +1,121 @@
-# KIAI Contract Deployments
+# KIAI Deployments
 
-All testnet and production contract deployments for the KIAI platform.
+All contract deployment records for KIAI. This file is factual deployment state, not a roadmap.
 
-**Architecture:** Base and Sui are payment rails only. The market pool, pricing, and LMSR logic live in the KIAI backend. On-chain contracts are custody vaults and settlement contracts only.
+## Mainnet Status — 2026-06-20
 
----
-
-## Base Sepolia (Testnet)
-
-### KIAIVault
-
-| Field | Value |
-|---|---|
-| **Contract** | `KIAIVault` |
-| **Network** | Base Sepolia |
-| **Chain ID** | `84532` |
-| **Address** | `0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8` |
-| **Deploy tx** | `0xd4d4c3d19b85b08a06712ed734195a1e94b71d5ea29dc78aa95384ee69a89025` |
-| **Block** | `42308800` |
-| **Timestamp** | `2026-06-02T07:38:08Z` |
-| **Deployer** | `0x5E6e1424177556b5Cabe397E1714Ee4fB799B14E` |
-| **Owner (operator)** | `0x5E6e1424177556b5Cabe397E1714Ee4fB799B14E` |
-| **USDC collateral** | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
-| **Gas used** | `1,513,094` |
-| **Gas price** | `0.006 gwei` |
-| **Total cost** | `~0.000009 ETH` |
-| **Compiler** | `Solc 0.8.24` |
-| **Optimizer** | `200 runs` |
-| **Source** | `contracts/src/KIAIVault.sol` |
-| **ABI** | `lib/contracts/KIAIVault.abi.json` |
-| **Status** | ✅ Live — Nagoya Basho 2026 market active |
-
-**Explorer:** https://sepolia.basescan.org/address/0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8
-
-**Constructor args:**
-```
-_usdc: 0x036CbD53842c5426634e7929541eC2318f3dCF7e
-```
-
-**Foundry broadcast artifacts:**
-```
-contracts/broadcast/DeployKIAIVault.s.sol/84532/run-latest.json
-```
-
-**USDC source:** Circle official — https://developers.circle.com/stablecoins/usdc-contract-addresses (verified 2026-06-02)
-
-**Source refresh 2026-06-04:** Circle still lists Base/Base Sepolia USDC. Tether support for Base/Base Sepolia USDT was not confirmed from the official Tether protocols page. Keep Base Sepolia deployment USDC-only until a fresh official source says otherwise.
-
----
-
-## Sui Testnet
-
-### kiai_vault (Move package)
-
-| Field | Value |
-|---|---|
-| **Contract** | `kiai_vault` (Move package) |
-| **Network** | Sui Testnet |
-| **Package ID** | `0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089` |
-| **KIAIVaultRegistry object** | `0xa522ecb86041af442dddc00db3a24e107918443cc6d5fd486adc90bc65784754` (Shared) |
-| **OperatorCap object** | `0x583b904cc0837d44b16d6dd17df133938c8d0202a75c9d73358c9b3d9b393ace` |
-| **Deploy digest** | `6TmnAtSZFoqTMbXeMsuUayA2arxtvyo33MJmcsg6bPsa` |
-| **Epoch** | `1118` |
-| **Timestamp** | `2026-06-02T~07:40 UTC` |
-| **Deployer / Owner** | `0x431247f9a7c7de5f39f6947bd8eb04939956265735623b84de3190a463caf1c1` |
-| **USDC collateral type** | `0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC` |
-| **Gas cost** | `~37 MIST (~0.037 SUI)` |
-| **Source** | `contracts/sui/sources/kiai_vault.move` |
-| **SDK** | `lib/server/sui-execution.ts` |
-| **Status** | ✅ Live on Sui Testnet |
-
-**Explorer:** https://suiscan.xyz/testnet/tx/6TmnAtSZFoqTMbXeMsuUayA2arxtvyo33MJmcsg6bPsa
-
-**USDC source:** Circle official Sui Testnet — https://developers.circle.com/stablecoins/usdc-contract-addresses (verified 2026-06-02)
-
-**Source refresh 2026-06-04:** Circle still lists Sui/Sui Testnet USDC. Tether support for Sui/Sui Testnet USDT was not confirmed. Sui settlement remains USDC-only.
-
-**Nagoya Basho 2026 market created on Sui Testnet:**
-
-| Field | Value |
-|---|---|
-| **Market Object ID** | `0x09b7dccd64037e3c5fcef36dc43bd5f62fecfbe62f59a0431ec9c3b2a8205522` (Shared) |
-| **Object type** | `kiai_vault::Market<...usdc::USDC>` |
-| **create_market digest** | `7oJwPTWTyYMchw6uvJddHctroNigXdnby9Xhtj28NNxo` |
-| **Epoch** | `1118` |
-| **Event** | `MarketCreatedEvent` — market_id_bytes = `Y21wd2E1bWJ5MDAwMHNqc21oYm52cXl1dA==` (base64 of `cmpwa5mby0000sjsmhbnvqyut`) |
-| **Gas cost** | `~3.37 MIST` |
-| **Status** | ✅ Created — Shared object, ready for user deposits |
-
-**Explorer:** https://suiscan.xyz/testnet/tx/7oJwPTWTyYMchw6uvJddHctroNigXdnby9Xhtj28NNxo
-
-**To create a market on Sui Testnet (template for future markets):**
-```bash
-sui client call \
-  --package 0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089 \
-  --module kiai_vault \
-  --function create_market \
-  --type-args "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC" \
-  --args \
-    0x583b904cc0837d44b16d6dd17df133938c8d0202a75c9d73358c9b3d9b393ace \
-    "[<market_id_bytes_as_u8_array>]" \
-  --gas-budget 10000000
-```
-
----
+| Rail | Network | Status | Notes |
+| --- | --- | --- | --- |
+| Base | Base Mainnet, chain ID `8453` | Deployed | `KIAIVault.sol` deployed and all non-archived markets created on-chain. |
+| Sui | Sui Mainnet | Deployed | Package + all 8 markets deployed. Poller indexed 8 `MarketCreatedEvent`s at checkpoints 289186230–289186286. |
 
 ## Base Mainnet
 
 | Field | Value |
-|---|---|
-| **Status** | 🔒 Not deployed — production legal review required |
+| --- | --- |
+| Network | Base Mainnet |
+| Chain ID | `8453` |
+| RPC | `https://mainnet.base.org` |
+| Vault | `0xb1Df6Ae8C267E07BCc0B1d83dF878089E1F5bc94` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Owner | `0xb5cE86e2d09841351627112aB955857CFF739CA4` |
+| Deploy tx | `0x16d36063ff5107572b7ae47eaf349ebed0ef24a60668118560ef94fb43c06cd7` |
+| Deploy block | `47534586` |
 
----
+Verification performed:
+
+- `cast code` returned deployed bytecode for the vault.
+- `owner()` returned `0xb5cE86e2d09841351627112aB955857CFF739CA4`.
+- `usdc()` returned Circle Base Mainnet USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`.
+- `cast receipt` for the deploy tx returned `status 1 (success)`.
+
+### Base Market Creation
+
+All non-archived markets were created on Base Mainnet through the shared vault.
+
+| Market | Lifecycle | Tx | Block |
+| --- | --- | --- | --- |
+| `nagoya-basho-2026-winner` | LIVE | `0x485c4e90be8380f0a4ee3491af661de128992358652fe7a4f34b87b9de9a63d0` | `47534647` |
+| `yokozuna-terunofuji-nagoya-2026-record` | DRAFT | `0x0fbac6da99df7ac4751d670b5c758ef3e05bb4a2a00e6be11fc72ea7dba9c71f` | `47534648` |
+| `summer-koshien-2026-winner` | DRAFT | `0x6c4abfd27787d234cc72e6711e2764472ae189ca43c2bb79b6c00c823576c74b` | `47534649` |
+| `npb-central-league-pennant-2026` | DRAFT | `0x98d8994041fe62bd358ed89078e97df6a7f2ee219d2222986b0da5fe181e56da` | `47534651` |
+| `akutagawa-prize-2026-second-half` | DRAFT | `0x2dde62cd4e04987e1afef3a9000a0f4231411af58b918895dfc72399fdf680bf` | `47534652` |
+| `japan-house-councillors-2028-coalition-majority` | DRAFT | `0x18b2e7666761276c7fa23f9087b9a1307736e15e240fb75e5e402e5ae39a4d34` | `47534653` |
+| `f1-abu-dhabi-gp-2026-winner` | DRAFT | `0x750b027eaeaa1b0b7e2fba5addf143e62e06da5d567f2518dec398829cd73910` | `47534655` |
+| `thailand-u19-vs-australia-u19-asean-2026` | REVIEWED | `0xdb28db475ee3824588395e3b1224c5676fd81481bffe2e21051540a3db51361d` | `47534656` |
+
+DB verification after indexing:
+
+- All 8 non-archived Base deployment rows use `USDC_BASE_MAINNET`.
+- All 8 non-archived Base deployment rows point to `0xb1Df6Ae8C267E07BCc0B1d83dF878089E1F5bc94`.
+- Base poller advanced `lastIndexedBlock` to `47534667`.
 
 ## Sui Mainnet
 
 | Field | Value |
-|---|---|
-| **Status** | 🔒 Not deployed — production legal review required |
+| --- | --- |
+| Network | Sui Mainnet |
+| RPC | `https://fullnode.mainnet.sui.io:443` |
+| GraphQL | `https://graphql.mainnet.sui.io/graphql` |
+| USDC type | `0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC` |
+| Operator address | `0x73e478cb66dd91fbc37d19f625f24a6d4b9846f86b5952dff04c1f843ac1b331` |
+| Package ID | `0x298f714144788755ad494a2238c6972189bf610c03794d4ee964dceef7a51d2b` |
+| Registry ID | `0x61f5136fd78bc202ae83abbe7a1aa5aa95c7af537e622dcdafb62f584f6a3005` |
+| OperatorCap ID | `0x05fa49d932332a4d91f07215d0f36ed52d96fe20e9c46126abfe39a6fe019039` |
+| UpgradeCap ID | `0x68cc4b8251adbb4f1499d298a85ef08ac24d81c83f15f159bb72d43a258c5d22` |
+| Deploy tx digest | `C3pZZY98bLScVQt3EDRHTBNYeapPMHAHWvegsfbETSSb` |
+| Deploy checkpoint | `289185782` |
+| Status | Deployed |
 
----
+Publish notes:
 
-## Markets Deployed Per Contract
+- `sui client publish` CLI was blocked because `suix_getOwnedObjects` indexer had not caught up with
+  the operator address gas coin (received via `accumulator_settlement` validator reward).
+- `suix_getCoins` and `sui_getObject` both confirmed 24 SUI gas coin existed:
+  `0x10d5f31284c36afe6a021abe2348414e9c9fc0cbfc70ef14329276701fe3c82c`.
+- Published via `scripts/publish-sui-mainnet.ts` using `@mysten/sui` SDK v2.x with
+  `tx.setGasPayment([{ objectId, version, digest }])` to bypass the CLI indexer dependency.
+- Gas used: 37,016,400 MIST (1,000,000 computation + 36,016,400 storage).
 
-### KIAIVault @ Base Sepolia
+Verification:
 
-Markets must be created on-chain via `createMarket(bytes32 marketId)` before users can deposit.
-`marketId` = `keccak256(bytes(backendMarketId))`.
+- `objectChanges` confirmed `published` type with `kiai_vault` module.
+- `KIAIVaultRegistry` created as shared object at version 1.
+- `OperatorCap` created as address-owned object at version 1.
+- `UpgradeCap` (0x2::package::UpgradeCap) created and held by operator.
 
-| Market | Backend ID | On-chain marketId (bytes32) | createMarket tx | Status |
-|---|---|---|---|---|
-| Nagoya Basho 2026 | `cmpwa5mby0000sjsmhbnvqyut` | `0x730339a56fc887e2a2c27c3348897e75033daecb1e4b7c8761de21a896dc7121` | [`0xe2d6bd6e...`](https://sepolia.basescan.org/tx/0xe2d6bd6ef70409b364cc62c30bf4914921c871d1329376b8a42b34d5f1e3aab3) | ✅ Created on-chain — block 42310207 |
+### Sui Market Creation
 
-**createMarket() receipt (Nagoya Basho 2026):**
-- Tx hash: `0xe2d6bd6ef70409b364cc62c30bf4914921c871d1329376b8a42b34d5f1e3aab3`
-- Block: `42310207` | Timestamp: `0x6a1e935e` (2026-06-02)
-- Event: `MarketCreated(0x730339a5...)` — topic `0x08cb70e1...`
-- Gas used: `34,649` | Gas price: `0.006 gwei`
-- Status: `1 (success)` — ready for user deposits
+All 8 non-archived markets created on Sui Mainnet.
 
----
+| Market | Lifecycle | Pool Object ID | Tx Digest |
+| --- | --- | --- | --- |
+| `nagoya-basho-2026-winner` | LIVE | `0x377eca888ccaa932644f8ca93f32315c627ab61a9b605e92beef550c0a6f8a7b` | `3yyiyxV5gaS88XhbMQuSpot6oCqUKc6hHSSZEytrGjV7` |
+| `yokozuna-terunofuji-nagoya-2026-record` | DRAFT | `0x20b19f619ebbeda9c33c65bef42ee8eb77624f7861d11328fa31fb526e4f3209` | `65YTcVdcEe4TEG7nxup7mKyDA2PWY36f9epTzvDRkKSb` |
+| `summer-koshien-2026-winner` | DRAFT | `0x580b279781e94719dbedfd51b8da1946ec65fe2108a706059b79c8e1c3736f06` | `DvPwAQDZ5Z4XdfCQDti9sEA7vS7EhExc4QgfuDfGhTsg` |
+| `npb-central-league-pennant-2026` | DRAFT | `0x7ea159286f6ce351f23ce2f17788c2e5fb1c65ca4e6c312cc9175f20d418f05c` | `4BBGDnzR3qK8jZDcFGLyJCLBtHbpcY6ekZCN6NEHSDgx` |
+| `akutagawa-prize-2026-second-half` | DRAFT | `0xb91d0d481a4728b9b0b1aa8b4c8a6ca66fed33be50f2d21f7d899c025d0d53f3` | `ZSHQ8R7bUNuxmt3rJT2s9yT4M65SmVskMnUWSLQWpHL` |
+| `japan-house-councillors-2028-coalition-majority` | DRAFT | `0x104d1f280bfaa9028fe8d3c5586abbb371b878ad033ce2816f169b743ac023d1` | `8MPkQbXZsmHGDyKeut9hxr23Mh5bj319cJMdN3S36quL` |
+| `f1-abu-dhabi-gp-2026-winner` | DRAFT | `0x1b3e633398b69030299b42c2acb72488ca3cb6b579922f8f57aeb67e0bd7a2c8` | `BQkx2hXBwWfXC3JTHkuTTkYp5CTqMTYGQoVr3c8KYcf7` |
+| `thailand-u19-vs-australia-u19-asean-2026` | REVIEWED | `0x1b8406d78a6667eec55a71cac578f3abaa8782b4737bf26f9cdbe56d7711b07f` | `AmcwbLhK7NogsZhMhaCV83NK3kW9B7VcDaNWzbzCpMUx` |
 
-## Environment Variable Reference
+## Env Keys
 
-| Var | Value |
-|---|---|
-| `BASE_SEPOLIA_KIAI_VAULT_ADDRESS` | `0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8` |
-| `BASE_SEPOLIA_USDC_ADDRESS` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
-| `SUI_TESTNET_KIAI_VAULT_PACKAGE_ID` | `0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089` |
-| `SUI_TESTNET_KIAI_VAULT_REGISTRY_ID` | `0xa522ecb86041af442dddc00db3a24e107918443cc6d5fd486adc90bc65784754` |
-| `SUI_TESTNET_KIAI_OPERATOR_CAP_ID` | `0x583b904cc0837d44b16d6dd17df133938c8d0202a75c9d73358c9b3d9b393ace` |
-| `SUI_TESTNET_NAGOYA_MARKET_OBJECT_ID` | `0x09b7dccd64037e3c5fcef36dc43bd5f62fecfbe62f59a0431ec9c3b2a8205522` |
-| `SUI_TESTNET_USDC_TYPE` | `0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC` |
-| `DEPLOYER_PRIVATE_KEY` | In `.env` — Base Sepolia deployer — never commit |
-| `SUI_OPERATOR_PRIVATE_KEY` | In `.env` — Sui testnet operator — never commit |
-| `OPERATOR_SECRET` | In `.env` — KIAI admin API bearer token |
-| `KIAI_ALLOW_EARLY_RESOLUTION_FINALIZE` | Optional local/test override. Set to `true` only for controlled tests that need to bypass the dispute deadline. Never enable for production-like settlement runs. |
-| `SPORTS_DATA_API_KEY` | Future optional source-adapter secret for licensed sports data. Do not add until provider/licensing decision is recorded in `docs/RESEARCH.md`. |
-| `RESOLUTION_EVIDENCE_ARCHIVE_DIR` | Optional local/test archive root for raw evidence payload JSON artifacts. Defaults to `.kiai/evidence-archive`. |
-| `RESOLUTION_EVIDENCE_ARCHIVE_BUCKET` | Future optional hosted storage target for source snapshots, screenshots, raw API payloads, and evidence bundle hashes. |
-| `KIAI_SOURCE_REFRESHED_AT` | ISO timestamp for the latest Base/Sui/Circle/Tether/indexer source-pack refresh before beta changes. Exposed as configured/stale status only through `/api/admin/ops/status`. |
-| `BASE_SEPOLIA_RPC_URL` | `https://sepolia.base.org` |
-| `SUI_TESTNET_RPC_URL` | `https://fullnode.testnet.sui.io:443` |
-| `SUI_TESTNET_GRAPHQL_URL` | `https://sui-testnet.mystenlabs.com/graphql` |
+Required mainnet chain keys:
 
-Resolution deployment note:
+~~~env
+BASE_MAINNET_RPC_URL="https://mainnet.base.org"
+BASE_MAINNET_USDC_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+BASE_MAINNET_KIAI_VAULT_ADDRESS="0xb1Df6Ae8C267E07BCc0B1d83dF878089E1F5bc94"
+BASE_MAINNET_DEPLOYMENT_BLOCK="47534586"
 
-- Base and Sui vaults must consume finalized KIAI settlement instructions only.
-- Do not wire chain settlement directly to sports API payloads, screenshots, or provisional source-adapter results.
-- Resolution finalization must preserve the evidence bundle hash and payout/refund policy used for the chain settlement run.
-- Settlement runs are now represented by per-chain `SettlementJob` records. Operators should prepare/list jobs through `/api/admin/markets/:id/settlement` before running settlement.
-- The deployed Base and Sui vaults currently support only winner-take-all `resolve` and full-refund `cancel`. Phase 1 keeps split, fractional, manual, partial-refund, and no-winning-share resolution cases blocked/manual; contract upgrades are deferred until after founder acceptance unless product explicitly changes scope.
+SUI_MAINNET_RPC_URL="https://fullnode.mainnet.sui.io:443"
+SUI_MAINNET_GRAPHQL_URL="https://graphql.mainnet.sui.io/graphql"
+SUI_MAINNET_USDC_TYPE="0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC"
+SUI_MAINNET_KIAI_VAULT_PACKAGE_ID="0x298f714144788755ad494a2238c6972189bf610c03794d4ee964dceef7a51d2b"
+SUI_MAINNET_KIAI_VAULT_REGISTRY_ID="0x61f5136fd78bc202ae83abbe7a1aa5aa95c7af537e622dcdafb62f584f6a3005"
+SUI_MAINNET_KIAI_OPERATOR_CAP_ID="0x05fa49d932332a4d91f07215d0f36ed52d96fe20e9c46126abfe39a6fe019039"
+SUI_MAINNET_DEPLOYMENT_CHECKPOINT="289185782"
+~~~
 
-Base/Sui/DeFi deployment guardrails, refreshed 2026-06-04:
-
-- Re-fetch Base `llms.txt`, Circle USDC addresses, Tether supported protocols, Sui data access, and Sui GraphQL docs before any new deployment or collateral change.
-- Foundry Base deploys should dry-run before broadcast, use keystore or hardware-wallet patterns where possible, preserve broadcast artifacts, and verify on Sepolia Basescan when practical.
-- Base execution health checks must distinguish pending, replaced, cancelled, reverted, and event-missing states.
-- Sui execution health checks must distinguish wallet rejection, failed transaction/effects, digest-not-yet-visible, event-missing, and checkpoint/indexer lag states.
-- DeFi integrations, bridges, DEX routing, lending, yield, and sponsored gas are not deployment requirements for Phase 1 and must not be added without a dedicated source-gated risk spike.
-
----
-
-## Upgrade History
-
-| Date | Network | Action | Address | Notes |
-|---|---|---|---|---|
-| 2026-06-02 | Base Sepolia | Initial deploy | `0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8` | Phase 4 — KIAIVault v1 |
-| 2026-06-02 | Sui Testnet | Initial publish | `0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089` | Phase 5 — kiai_vault v1 |
-| 2026-06-02 | Base Sepolia | createMarket (Nagoya Basho) | tx `0xe2d6bd6e...` block 42310207 | Phase 5 — first market vault created |
-| 2026-06-02 | Sui Testnet | create_market (Nagoya Basho) | digest `7oJwPTWT...` object `0x09b7dccd...` | Phase 5 — first market vault created |
+Never commit private keys or `.env`.

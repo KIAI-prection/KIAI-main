@@ -1,7 +1,7 @@
 /**
  * KIAI Base Event Poller
  *
- * Watches KIAIVault on Base Sepolia for on-chain events using viem getLogs.
+ * Watches KIAIVault on Base Mainnet for on-chain events using viem getLogs.
  * No external services required — uses the same viem client as base-execution.ts.
  *
  * Architecture: Base is a custody/settlement rail only.
@@ -27,7 +27,7 @@ import {
   toBytes,
   type Address,
 } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
 import { db } from "@/lib/server/db";
 import { toPrismaJson } from "@/lib/server/json";
 
@@ -49,13 +49,12 @@ export const VAULT_EVENTS_ABI = parseAbi([
 // Config
 // ---------------------------------------------------------------------------
 
-const VAULT_ADDRESS = (process.env.BASE_SEPOLIA_KIAI_VAULT_ADDRESS ??
-  "0x3d1E1993fD3f30c64e884E5B777c7B4e55C458A8") as Address;
+const VAULT_ADDRESS = process.env.BASE_MAINNET_KIAI_VAULT_ADDRESS as Address | undefined;
 
-const RPC_URL = process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org";
+const RPC_URL = process.env.BASE_MAINNET_RPC_URL ?? "https://mainnet.base.org";
 
 // KIAIVault deployment block — start indexing from here
-const DEPLOYMENT_BLOCK = BigInt(42308800);
+const DEPLOYMENT_BLOCK = BigInt(process.env.BASE_MAINNET_DEPLOYMENT_BLOCK ?? "0");
 
 // Max blocks to fetch per poll (avoid viem getLogs limits)
 const MAX_BLOCKS_PER_POLL = BigInt(2000);
@@ -69,7 +68,7 @@ let _isRunning = false;
 
 function getClient() {
   return createPublicClient({
-    chain: baseSepolia,
+    chain: base,
     transport: http(RPC_URL),
   });
 }
@@ -106,6 +105,10 @@ export async function pollBaseEvents(): Promise<{
   fromBlock: bigint;
   toBlock: bigint;
 }> {
+  if (!VAULT_ADDRESS) {
+    throw new Error("BASE_MAINNET_KIAI_VAULT_ADDRESS is required for Base event polling.");
+  }
+
   const client = getClient();
 
   // Get last indexed block from DB (stored in ChainDeployment.lastIndexedBlock)

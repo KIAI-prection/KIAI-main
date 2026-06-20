@@ -152,3 +152,14 @@ contracts/sui/.move/
 *.tgz
 *.tar.gz
 .sentryclirc
+
+# =============================================================================
+# Internal documentation (not for public repo)
+# =============================================================================
+docs/PLAN.md
+docs/RESEARCH.md
+docs/BETA_READINESS.md
+docs/PRODUCT.md
+docs/RUNBOOKS.md
+docs/ARCHITECTURE.md
+contracts/README.md

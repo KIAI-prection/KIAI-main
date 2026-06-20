@@ -128,6 +128,8 @@ enum OracleAssertionStatus {
 enum CollateralAsset {
   USDC_BASE_SEPOLIA
   USDC_SUI_TESTNET
+  USDC_BASE_MAINNET
+  USDC_SUI_MAINNET
 }
 
 // ---------------------------------------------------------------------------

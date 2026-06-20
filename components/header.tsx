@@ -2,7 +2,8 @@
 
 import { Link } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { Search, Menu, Trophy, ChevronDown } from "lucide-react";
+import { Search, Menu, ChevronDown, Sun, Moon } from "lucide-react";
+import { useTheme } from "../components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,9 +12,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LanguageSwitcher } from "./language-switcher";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { WalletConnect } from "@/components/wallet-connect";
 import { cn } from "@/lib/utils";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 
 type NavItem = {
   key: "markets" | "live" | "social" | "trust" | "research";
@@ -34,6 +44,22 @@ export function Header() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
+  const router = useRouter();
+  const { setTheme, resolvedTheme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) {
+      router.push("/" + locale + "/markets");
+      return;
+    }
+
+    router.push(
+      "/" + locale + "/markets?q=" + encodeURIComponent(query)
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50 h-16 border-b border-border bg-background">
@@ -44,9 +70,6 @@ export function Header() {
             KIAI
           </span>
           <span className="text-xl font-bold text-primary">!</span>
-          <span className="ml-1 text-xs font-medium text-foreground-muted">
-            気合
-          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -71,9 +94,7 @@ export function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem asChild>
-                      <Link href="/trust">
-                        {locale === "ja" ? "信頼性について" : "About Trust"}
-                      </Link>
+                      <Link href="/trust">About Trust</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/trust/faq">FAQ</Link>
@@ -106,28 +127,43 @@ export function Header() {
 
         {/* Search Bar */}
         <div className="hidden max-w-[480px] flex-1 px-8 md:block">
-          <div className="relative">
+          <form className="relative" role="search" onSubmit={submitSearch}>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted" />
             <input
               type="text"
               suppressHydrationWarning
               placeholder={t("search")}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
               className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm placeholder:text-foreground-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
-          </div>
+          </form>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          
-          <Button className="hidden bg-primary text-primary-foreground hover:bg-primary-hover sm:flex">
-            {t("deposit")}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="hidden bg-primary text-primary-foreground hover:bg-primary-hover sm:flex">
+                {t("deposit")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Wallets</DialogTitle>
+                <DialogDescription>
+                  Connect a Base or Sui mainnet wallet before placing a real trade.
+                </DialogDescription>
+              </DialogHeader>
+              <WalletConnect />
+            </DialogContent>
+          </Dialog>
+
+          <Button variant="ghost" size="icon" className="hidden lg:flex" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+            {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
-          <Button variant="ghost" size="icon" className="hidden lg:flex">
-            <Trophy className="h-5 w-5" />
-          </Button>
+
 
           {/* Mobile Menu */}
           <Sheet>
@@ -153,9 +189,22 @@ export function Header() {
                   </Link>
                 ))}
                 <div className="border-t border-border pt-4">
-                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary-hover">
-                    {t("deposit")}
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-primary text-primary-foreground hover:bg-primary-hover">
+                        {t("deposit")}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Wallets</DialogTitle>
+                        <DialogDescription>
+                          Connect a Base or Sui mainnet wallet before placing a real trade.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <WalletConnect />
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </nav>
             </SheetContent>

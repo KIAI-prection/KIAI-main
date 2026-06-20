@@ -3,7 +3,7 @@
  * Returns available chains and their verified collateral assets.
  * Used by the trade ticket to populate the chain selector.
  *
- * These addresses are sourced from docs/RESEARCH.md Phase 1 Source Audit (2026-06-02).
+ * These addresses are sourced from docs/RESEARCH.md mainnet source audit.
  * Any address change requires a new source audit entry before deploying.
  */
 
@@ -26,14 +26,14 @@ const CHAINS: ChainInfo[] = [
   {
     chain: "BASE",
     name: "Base",
-    network: "base-sepolia",
-    rpcUrl: process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org",
+    network: "base-mainnet",
+    rpcUrl: process.env.BASE_MAINNET_RPC_URL ?? "https://mainnet.base.org",
     collateral: {
       symbol: "USDC",
-      // Circle official Base Sepolia USDC — verified 2026-06-02
+      // Circle official Base Mainnet USDC.
       address:
-        process.env.BASE_SEPOLIA_USDC_ADDRESS ??
-        "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        process.env.BASE_MAINNET_USDC_ADDRESS ??
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       decimals: 6,
     },
     available: true,
@@ -41,15 +41,15 @@ const CHAINS: ChainInfo[] = [
   {
     chain: "SUI",
     name: "Sui",
-    network: "sui-testnet",
+    network: "sui-mainnet",
     rpcUrl:
-      process.env.SUI_TESTNET_RPC_URL ?? "https://fullnode.testnet.sui.io:443",
+      process.env.SUI_MAINNET_RPC_URL ?? "https://fullnode.mainnet.sui.io:443",
     collateral: {
       symbol: "USDC",
-      // Circle official Sui Testnet USDC — verified 2026-06-02
+      // Circle official Sui Mainnet USDC.
       address:
-        process.env.SUI_TESTNET_USDC_TYPE ??
-        "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC",
+        process.env.SUI_MAINNET_USDC_TYPE ??
+        "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
       decimals: 6,
     },
     available: true,

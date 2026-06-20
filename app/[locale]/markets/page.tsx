@@ -12,34 +12,45 @@ export default async function MarketsPage({ searchParams }: MarketsPageProps) {
   const params = searchParams ? await searchParams : {};
   const preview = params.preview;
   const category = params.category;
+  const q = params.q;
   const previewCatalogue = Array.isArray(preview)
     ? preview.includes("catalogue")
     : preview === "catalogue";
   const selectedCategory = Array.isArray(category) ? category[0] : category;
-  const markets = await getPublicMarkets(selectedCategory, { previewCatalogue });
+  const query = Array.isArray(q) ? q[0] : q;
+  const markets = await getPublicMarkets(selectedCategory, {
+    previewCatalogue,
+    query,
+  });
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 lg:px-6">
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">{t("markets")}</h1>
+        {query && (
+          <p className="mt-2 text-sm text-foreground-muted">
+            Search results for{" "}
+            <span className="font-medium text-foreground">{query}</span>
+          </p>
+        )}
       </div>
 
       {/* Filters */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground h-10">
           <option>All Categories</option>
           <option>Politics</option>
           <option>Sports</option>
           <option>Tech</option>
         </select>
-        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground h-10">
           <option>All Status</option>
           <option>Live</option>
           <option>Upcoming</option>
           <option>Closed</option>
         </select>
-        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+        <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground h-10">
           <option>Sort by Volume</option>
           <option>Sort by Newest</option>
           <option>Sort by Ending Soon</option>

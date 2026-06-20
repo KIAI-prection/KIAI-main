@@ -19,6 +19,7 @@
  */
 
 import { db } from "@/lib/server/db";
+import { chainShareUnitsToDecimal, usdcUnitsToUsd } from "@/lib/domain/trade-units";
 import type { Chain } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
@@ -146,15 +147,13 @@ async function reconcilePositionOpened(
     args.json?.outcomeSlug ??
     "unknown";
 
-  // Parse shares and amount (bigint strings, 18 and 6 decimals respectively)
+  // Parse shares and amount. Base uses 18-decimal shares; Sui v1 emits 6-decimal shares.
   const sharesRaw = BigInt(args.shares ?? args.json?.shares ?? "0");
   const usdcRaw = BigInt(
     args.usdcDeposited ?? args.usdc_deposited ?? args.json?.usdc_deposited ?? "0"
   );
-
-  // Convert to decimal (USDC has 6 decimals, shares use 18 decimals)
-  const sharesDecimal = Number(sharesRaw) / 1e18;
-  const usdcDecimal = Number(usdcRaw) / 1e6;
+  const sharesDecimal = chainShareUnitsToDecimal(chain, sharesRaw);
+  const usdcDecimal = usdcUnitsToUsd(usdcRaw);
 
   if (!event.marketId || !walletAddress || sharesDecimal <= 0) {
     return { positionUpdated: false };

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   buildDisputeDraft,
   buildEvidenceSnapshotDraft,
+  buildApiFootballFixtureDraft,
   buildOracleAssertionDraft,
   buildResolutionPolicyDraft,
   buildSumoJsaObservationDraft,
@@ -38,5 +39,23 @@ assert.equal(dispute.reason, "SOURCE_DISAGREEMENT");
 const sumo = buildSumoJsaObservationDraft(market);
 assert.equal(sumo.observedOutcomeSlug, "terunofuji");
 assert.equal(sumo.providerEventStatus, "official_confirmed");
+
+const footballMarket = {
+  id: "market-football",
+  slug: "thailand-u19-vs-australia-u19-asean-2026",
+  titleEn: "Thailand U19 vs Australia U19 — ASEAN Championship",
+  outcomes: [
+    { slug: "home-win", name: "Thailand U19 win" },
+    { slug: "draw", name: "Draw" },
+    { slug: "away-win", name: "Australia U19 win" },
+  ],
+};
+const football = buildApiFootballFixtureDraft(footballMarket);
+assert.equal(football.fixtureId, 1553093);
+assert.equal(football.expectedHomeTeam, "Thailand U19");
+assert.equal(football.expectedAwayTeam, "Australia U19");
+assert.equal(football.outcomeSlugMap.home, "home-win");
+assert.equal(football.outcomeSlugMap.draw, "draw");
+assert.equal(football.outcomeSlugMap.away, "away-win");
 
 console.log("operator-console-defaults tests passed");

@@ -6,8 +6,8 @@
  * Provides EVM (wagmi) and Sui (dApp Kit) wallet contexts.
  * Invisible to the user — pure state management.
  *
- * EVM: wagmi with Base Sepolia as the default chain.
- * Sui: @mysten/dapp-kit connected to Sui Testnet.
+ * EVM: wagmi with Base Mainnet as the default chain.
+ * Sui: @mysten/dapp-kit connected to Sui Mainnet.
  *
  * Architecture: Base and Sui are payment rails only.
  * The wallet provider just surfaces which wallets are connected;
@@ -16,47 +16,32 @@
 
 import { ReactNode } from "react";
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
+import { injected } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SuiClientProvider, WalletProvider as SuiWalletProvider } from "@mysten/dapp-kit";
+import { DAppKitProvider } from "@mysten/dapp-kit-react";
+import { suiDAppKit } from "@/lib/providers/sui-dapp-kit";
 
 // ---------------------------------------------------------------------------
-// wagmi config — Base Sepolia testnet
+// wagmi config — Base Mainnet
 // ---------------------------------------------------------------------------
 
 const wagmiConfig = createConfig({
-  chains: [baseSepolia],
+  chains: [base],
+  connectors: [injected()],
   transports: {
-    [baseSepolia.id]: http("https://sepolia.base.org"),
+    [base.id]: http("https://mainnet.base.org"),
   },
+  ssr: true,
 });
 
 const queryClient = new QueryClient();
-
-// ---------------------------------------------------------------------------
-// Sui network config — Testnet (hardcoded — getFullnodeUrl not available in this SDK version)
-// ---------------------------------------------------------------------------
-
-const suiNetworks = {
-  testnet: {
-    network: "testnet",
-    url: "https://fullnode.testnet.sui.io:443",
-  },
-} as const;
-
-// ---------------------------------------------------------------------------
-// Combined provider wrapper
-// ---------------------------------------------------------------------------
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <SuiClientProvider networks={suiNetworks} defaultNetwork="testnet">
-          <SuiWalletProvider autoConnect={false}>
-            {children}
-          </SuiWalletProvider>
-        </SuiClientProvider>
+        <DAppKitProvider dAppKit={suiDAppKit}>{children}</DAppKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

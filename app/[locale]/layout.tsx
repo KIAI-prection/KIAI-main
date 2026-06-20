@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Noto_Sans_JP } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -22,15 +22,10 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  variable: "--font-noto-sans-jp",
-});
-
 export const metadata: Metadata = {
-  title: "KIAI - 日本初の総合予測市場プラットフォーム",
+  title: "KIAI - Prediction Market Platform",
   description:
-    "政治・経済・スポーツ・カルチャー・テクノロジーなど、あらゆる事象の結果をYes/No型契約として売買できる日本初の予測市場プラットフォーム",
+    "Trade yes/no contracts on politics, economics, sports, culture, technology, and other future events.",
   generator: "v0.app",
   icons: {
     icon: [
@@ -60,7 +55,7 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
 
-  if (!routing.locales.includes(locale as "ja" | "en")) {
+  if (!routing.locales.includes(locale as "en")) {
     notFound();
   }
 
@@ -70,9 +65,55 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} ${notoSansJP.variable} bg-background`}
+      className={`${geist.variable} ${geistMono.variable} bg-background`}
     >
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased" suppressHydrationWarning>
+        <Script
+          id="extension-hydration-attribute-cleanup"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (() => {
+                const injectedAttributePattern = /^(bis_|__processed_)/;
+                const clean = (node) => {
+                  if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
+                  for (const attribute of Array.from(node.attributes)) {
+                    if (injectedAttributePattern.test(attribute.name)) {
+                      node.removeAttribute(attribute.name);
+                    }
+                  }
+                  for (const element of node.querySelectorAll("*")) {
+                    for (const attribute of Array.from(element.attributes)) {
+                      if (injectedAttributePattern.test(attribute.name)) {
+                        element.removeAttribute(attribute.name);
+                      }
+                    }
+                  }
+                };
+
+                clean(document.documentElement);
+                const observer = new MutationObserver((mutations) => {
+                  for (const mutation of mutations) {
+                    if (mutation.type === "attributes") {
+                      clean(mutation.target);
+                    }
+                    for (const node of mutation.addedNodes) {
+                      clean(node);
+                    }
+                  }
+                });
+                observer.observe(document.documentElement, {
+                  attributes: true,
+                  childList: true,
+                  subtree: true,
+                });
+                window.addEventListener("load", () => observer.disconnect(), {
+                  once: true,
+                });
+              })();
+            `,
+          }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

@@ -1,7 +1,7 @@
 /**
  * KIAI Base Execution Service
  *
- * Handles all EVM interactions for Base Sepolia using viem.
+ * Handles all EVM interactions for Base Mainnet using viem.
  * Architecture: Base is a payment/custody rail only.
  * Market pricing and LMSR pool logic live in the KIAI backend.
  * This service executes on-chain operations:
@@ -29,7 +29,7 @@ import {
   type Hash,
   type Address,
 } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
 // ---------------------------------------------------------------------------
@@ -69,14 +69,12 @@ export const ERC20_ABI = parseAbi([
 
 /**
  * Public client for read-only operations and preflight simulation.
- * Uses Base Sepolia RPC from environment (falls back to public endpoint).
+ * Uses Base Mainnet RPC from environment (falls back to public endpoint).
  */
 export function getPublicClient() {
   return createPublicClient({
-    chain: baseSepolia,
-    transport: http(
-      process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org"
-    ),
+    chain: base,
+    transport: http(process.env.BASE_MAINNET_RPC_URL ?? "https://mainnet.base.org"),
   });
 }
 
@@ -90,16 +88,14 @@ export function getOperatorWalletClient() {
   if (!privateKey) {
     throw new Error(
       "DEPLOYER_PRIVATE_KEY not set. " +
-        "Required for Base Sepolia contract operations."
+        "Required for Base Mainnet contract operations."
     );
   }
   const account = privateKeyToAccount(privateKey as Hash);
   return createWalletClient({
     account,
-    chain: baseSepolia,
-    transport: http(
-      process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org"
-    ),
+    chain: base,
+    transport: http(process.env.BASE_MAINNET_RPC_URL ?? "https://mainnet.base.org"),
   });
 }
 

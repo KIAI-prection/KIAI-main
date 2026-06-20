@@ -1,6 +1,5 @@
 type LocaleText = {
   en: string;
-  ja: string;
 };
 
 export type MarketStatus = "live" | "upcoming" | "closed";
@@ -86,7 +85,7 @@ export type SocialPost = {
   saved?: boolean;
 };
 
-const enOnly = (text: string): LocaleText => ({ en: text, ja: text });
+const enOnly = (text: string): LocaleText => ({ en: text });
 
 export const mockChartData: ChartPoint[] = [
   { time: "09:00", value: 42 },
@@ -508,7 +507,7 @@ export const mockArticles: Article[] = [
     date: "May 25, 2026",
     title: enOnly("How KIAI resolves sumo markets"),
     excerpt: enOnly(
-      "A practical guide to official sources, dispute windows, and how a testnet position moves from open to settled."
+      "A practical guide to official sources, dispute windows, and how a mainnet position moves from open to settled."
     ),
     author: "KIAI Research",
   },

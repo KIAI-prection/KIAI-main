@@ -29,27 +29,26 @@ import { toBase64 } from "@mysten/sui/utils";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 
 // ---------------------------------------------------------------------------
-// Network config (from RESEARCH.md Phase 1 source audit 2026-06-02)
+// Network config (mainnet source audit)
 // ---------------------------------------------------------------------------
 
-const SUI_TESTNET_RPC = process.env.SUI_TESTNET_RPC_URL ?? "https://fullnode.testnet.sui.io:443";
+const SUI_MAINNET_RPC =
+  process.env.SUI_MAINNET_RPC_URL ?? "https://fullnode.mainnet.sui.io:443";
 
 // Deployed contract IDs (from docs/DEPLOYMENTS.md)
 export const SUI_PACKAGE_ID =
-  process.env.SUI_TESTNET_KIAI_VAULT_PACKAGE_ID ??
-  "0x1064637e3fb717e89b13de02b6c8babc9aa26a77bea9acdeb9d0cbf30ddaa089";
+  process.env.SUI_MAINNET_KIAI_VAULT_PACKAGE_ID ?? "";
 
 export const SUI_REGISTRY_ID =
-  process.env.SUI_TESTNET_KIAI_VAULT_REGISTRY_ID ??
-  "0xa522ecb86041af442dddc00db3a24e107918443cc6d5fd486adc90bc65784754";
+  process.env.SUI_MAINNET_KIAI_VAULT_REGISTRY_ID ?? "";
 
 export const SUI_OPERATOR_CAP_ID =
-  process.env.SUI_TESTNET_KIAI_OPERATOR_CAP_ID ??
-  "0x583b904cc0837d44b16d6dd17df133938c8d0202a75c9d73358c9b3d9b393ace";
+  process.env.SUI_MAINNET_KIAI_OPERATOR_CAP_ID ?? "";
 
-// Circle official Sui Testnet USDC type (verified 2026-06-02)
+// Circle official Sui Mainnet USDC type.
 export const USDC_TYPE =
-  "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC";
+  process.env.SUI_MAINNET_USDC_TYPE ??
+  "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC";
 
 // ---------------------------------------------------------------------------
 // gRPC client singleton
@@ -60,8 +59,8 @@ let _grpcClient: SuiGrpcClient | null = null;
 export function getSuiClient(): SuiGrpcClient {
   if (!_grpcClient) {
     _grpcClient = new SuiGrpcClient({
-      network: "testnet",
-      baseUrl: SUI_TESTNET_RPC,
+      network: "mainnet",
+      baseUrl: SUI_MAINNET_RPC,
     });
   }
   return _grpcClient;
@@ -95,7 +94,7 @@ export function getOperatorKeypair(): Ed25519Keypair {
 export async function marketIdToBytes(marketId: string): Promise<Uint8Array> {
   const { createHash } = await import("crypto");
   return new Uint8Array(
-    createHash("sha256") // Using SHA-256 as a consistent hash for testnet
+    createHash("sha256") // Uses the same stable market-id hash across chains
       .update(marketId)
       .digest()
   );
@@ -127,7 +126,7 @@ export type SuiExecutionResult =
 // ---------------------------------------------------------------------------
 
 /**
- * Build and execute a PTB to create a market vault on Sui Testnet.
+ * Build and execute a PTB to create a market vault on Sui Mainnet.
  * Uses the operator keypair from SUI_OPERATOR_PRIVATE_KEY env var.
  *
  * @param marketId Backend market ID string (will be hashed to bytes)
@@ -295,7 +294,6 @@ export async function cancelMarketOnSui(
  *
  * @param marketObjectId Sui object ID of the Market<USDC> shared object
  * @param outcomeSlug Human-readable outcome slug
- * @param usdcCoinObjectId The user's USDC coin object ID (from their wallet)
  * @param usdcAmount Exact USDC amount in base units (6 decimals)
  * @param shares LMSR shares from backend quote (scaled u64)
  * @param sender User's Sui address
@@ -303,7 +301,6 @@ export async function cancelMarketOnSui(
 export async function buildDepositTransaction(
   marketObjectId: string,
   outcomeSlug: string,
-  usdcCoinObjectId: string,
   usdcAmount: bigint,
   shares: bigint,
   sender: string
@@ -314,10 +311,12 @@ export async function buildDepositTransaction(
   const tx = new Transaction();
   tx.setSender(sender);
 
-  // Split the exact amount from the user's USDC coin
-  const [splitCoin] = tx.splitCoins(tx.object(usdcCoinObjectId), [
-    tx.pure(bcs.u64().serialize(usdcAmount)),
-  ]);
+  // Let the wallet/client resolve the user's USDC coins at signing time.
+  const usdcCoin = tx.coin({
+    type: USDC_TYPE,
+    balance: usdcAmount,
+    useGasCoin: false,
+  });
 
   tx.moveCall({
     target: `${SUI_PACKAGE_ID}::kiai_vault::deposit`,
@@ -326,12 +325,49 @@ export async function buildDepositTransaction(
       tx.object(marketObjectId),
       tx.pure(bcs.vector(bcs.u8()).serialize(Array.from(outcomeId))),
       tx.pure(bcs.vector(bcs.u8()).serialize(Array.from(outcomeSlugBytes))),
-      splitCoin,
-      tx.pure(bcs.u64().serialize(shares)),
+      usdcCoin,
+      tx.pure.u64(shares),
     ],
   });
 
-  return toBase64(await tx.build({ client: getSuiClient() }));
+  return tx.toJSON({ supportedIntents: ["CoinWithBalance"] });
+}
+
+export type SuiDepositTransactionPayload = {
+  kind: "sui_deposit";
+  packageId: string;
+  usdcType: string;
+  marketObjectId: string;
+  outcomeSlug: string;
+  outcomeIdBytes: number[];
+  outcomeSlugBytes: number[];
+  usdcAmount: string;
+  shares: string;
+  sender: string;
+};
+
+export async function buildDepositTransactionPayload(
+  marketObjectId: string,
+  outcomeSlug: string,
+  usdcAmount: bigint,
+  shares: bigint,
+  sender: string
+): Promise<SuiDepositTransactionPayload> {
+  const outcomeId = await outcomeSlugToBytes(outcomeSlug);
+  const outcomeSlugBytes = new TextEncoder().encode(outcomeSlug);
+
+  return {
+    kind: "sui_deposit",
+    packageId: SUI_PACKAGE_ID,
+    usdcType: USDC_TYPE,
+    marketObjectId,
+    outcomeSlug,
+    outcomeIdBytes: Array.from(outcomeId),
+    outcomeSlugBytes: Array.from(outcomeSlugBytes),
+    usdcAmount: usdcAmount.toString(),
+    shares: shares.toString(),
+    sender,
+  };
 }
 
 // ---------------------------------------------------------------------------

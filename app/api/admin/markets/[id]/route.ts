@@ -98,6 +98,27 @@ export async function GET(
         ...market,
         volumeUsd: Number(market.volumeUsd),
         totalLiquidityUsd: Number(market.totalLiquidityUsd),
+        compliancePolicy: market.compliancePolicy
+          ? {
+              ...market.compliancePolicy,
+              maxPositionUsd:
+                market.compliancePolicy.maxPositionUsd === null
+                  ? null
+                  : Number(market.compliancePolicy.maxPositionUsd),
+              maxDailyUsd:
+                market.compliancePolicy.maxDailyUsd === null
+                  ? null
+                  : Number(market.compliancePolicy.maxDailyUsd),
+            }
+          : null,
+        chainDeployments: market.chainDeployments.map((deployment) => ({
+          ...deployment,
+          liquidityUsd: Number(deployment.liquidityUsd),
+          lastIndexedBlock:
+            deployment.lastIndexedBlock === null
+              ? null
+              : deployment.lastIndexedBlock.toString(),
+        })),
         allowedTransitions,
         orderIntents: market.orderIntents.map((o) => ({
           ...o,

@@ -31,10 +31,8 @@ export type EvidenceArchiveRecord = {
 };
 
 export function evidenceArchiveRoot() {
-  return (
-    process.env.RESOLUTION_EVIDENCE_ARCHIVE_DIR ??
-    path.join(process.cwd(), ".kiai", "evidence-archive")
-  );
+  const configuredRoot = process.env.RESOLUTION_EVIDENCE_ARCHIVE_DIR?.trim();
+  return configuredRoot || path.join(process.cwd(), ".kiai", "evidence-archive");
 }
 
 export function normalizeEvidenceHash(payloadHash: string) {

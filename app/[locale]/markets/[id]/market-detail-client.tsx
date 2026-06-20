@@ -13,10 +13,9 @@ import type { UIMarket, UIContestant } from "@/lib/domain/market-service";
 
 interface MarketDetailClientProps {
   market: UIMarket;
-  locale: string;
 }
 
-export function MarketDetailClient({ market, locale }: MarketDetailClientProps) {
+export function MarketDetailClient({ market }: MarketDetailClientProps) {
   const t = useTranslations("market");
   const [selectedContestant, setSelectedContestant] = useState<UIContestant | null>(
     market.contestants[0] || null
@@ -25,15 +24,6 @@ export function MarketDetailClient({ market, locale }: MarketDetailClientProps) 
   const topChance = Math.max(...market.contestants.map((c) => c.chance));
 
   const formatVolume = (volume: number) => {
-    if (locale === "ja") {
-      if (volume >= 100000000) {
-        return `¥${(volume / 100000000).toFixed(0)}億`;
-      }
-      if (volume >= 10000) {
-        return `¥${(volume / 10000).toFixed(0)}万`;
-      }
-      return `¥${volume.toLocaleString()}`;
-    }
     if (volume >= 1000000) {
       return `$${(volume / 1000000).toFixed(1)}M`;
     }
@@ -53,23 +43,23 @@ export function MarketDetailClient({ market, locale }: MarketDetailClientProps) 
             <div className="mb-2 flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-foreground-muted" />
               <span className="text-sm font-medium uppercase tracking-wider text-foreground-muted">
-                {market.categoryLabel[locale as "ja" | "en"]}
+                {market.categoryLabel.en}
               </span>
               <span className="text-sm text-foreground-muted">
-                {market.subtitle[locale as "ja" | "en"]}
+                {market.subtitle.en}
               </span>
             </div>
 
             <h1 className="mb-3 text-2xl font-bold text-foreground lg:text-3xl">
-              {market.title[locale as "ja" | "en"]}
+              {market.title.en}
             </h1>
 
             <div className="flex flex-wrap items-center gap-4">
               {market.status === "live" ? (
-                <LiveBadge info={market.statusInfo?.[locale as "ja" | "en"]} />
+                <LiveBadge info={market.statusInfo?.en} />
               ) : (
                 <span className="text-sm text-foreground-muted">
-                  {market.statusInfo?.[locale as "ja" | "en"]}
+                  {market.statusInfo?.en}
                 </span>
               )}
               <span className="text-sm tabular-nums text-foreground-muted">
@@ -91,7 +81,7 @@ export function MarketDetailClient({ market, locale }: MarketDetailClientProps) 
             <div className="border-b border-border px-4 py-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-foreground">
-                  {locale === "ja" ? "候補" : "Contestants"}
+                  Contestants
                 </h2>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm">
@@ -106,13 +96,9 @@ export function MarketDetailClient({ market, locale }: MarketDetailClientProps) 
             <div className="px-4">
               {/* Table Header */}
               <div className="flex items-center gap-4 border-b border-border py-2 text-xs font-medium uppercase tracking-wider text-foreground-muted">
-                <div className="flex-1">
-                  {locale === "ja" ? "候補名" : "Contestant"}
-                </div>
+                <div className="flex-1">Contestant</div>
                 <div className="w-24 text-right">{t("chance")}</div>
-                <div className="hidden w-20 text-center sm:block">
-                  {locale === "ja" ? "スコア" : "Score"}
-                </div>
+                <div className="hidden w-20 text-center sm:block">Score</div>
                 <div className="w-[156px] text-center">{t("price")}</div>
               </div>
 
@@ -135,7 +121,6 @@ export function MarketDetailClient({ market, locale }: MarketDetailClientProps) 
             <TradePanel
               market={market}
               selectedContestant={selectedContestant}
-              locale={locale}
             />
           </div>
         </div>

@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const category = searchParams.get("category");
+    const query = searchParams.get("q")?.trim();
     const previewCatalogue = searchParams.get("preview") === "catalogue";
     const lifecycles = ["LIVE", "REVIEWED", "DEPLOY_PENDING"];
 
@@ -22,10 +23,31 @@ export async function GET(request: NextRequest) {
           ? { slug: { in: DEMO_MARKET_SLUGS } }
           : { lifecycle: { in: lifecycles as never[] } }),
         ...(category ? { category } : {}),
+        ...(query
+          ? {
+              OR: [
+                { titleEn: { contains: query, mode: "insensitive" } },
+                { titleJa: { contains: query, mode: "insensitive" } },
+                { subtitleEn: { contains: query, mode: "insensitive" } },
+                { subtitleJa: { contains: query, mode: "insensitive" } },
+                { category: { contains: query, mode: "insensitive" } },
+                { categoryLabelEn: { contains: query, mode: "insensitive" } },
+                { categoryLabelJa: { contains: query, mode: "insensitive" } },
+                {
+                  outcomes: {
+                    some: {
+                      name: { contains: query, mode: "insensitive" },
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
       },
       include: {
         outcomes: { orderBy: { sortOrder: "asc" } },
         chartPoints: { orderBy: { sortOrder: "asc" } },
+        chainDeployments: true,
       },
       orderBy: { openAt: "desc" },
     });
